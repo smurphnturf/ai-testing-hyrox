@@ -7,7 +7,6 @@ import {
   Paper,
   MenuItem,
   Container,
-  Grid as MuiGrid,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -23,10 +22,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useState } from 'react';
 import { TrainingProgram, Workout } from './types';
 import WorkoutDetailsForm from './WorkoutDetailsForm';
 import { trainingProgramsService } from '../../services/trainingPrograms';
+
+interface Props {
+  onProgramCreated?: () => void;
+  initialProgram?: TrainingProgram;
+}
 
 const workoutTypes = [
   'strength',
@@ -82,7 +87,7 @@ const getDefaultWorkoutData = (type: typeof workoutTypes[number], week: number, 
   }
 };
 
-export const TrainingProgramBuilder = () => {
+export const TrainingProgramBuilder = ({ onProgramCreated, initialProgram }: Props) => {
   const [isWorkoutDialogOpen, setIsWorkoutDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(1);
@@ -94,8 +99,8 @@ export const TrainingProgramBuilder = () => {
     severity: 'success'
   });
 
-  const { control, handleSubmit, watch } = useForm<TrainingProgram>({
-    defaultValues: {
+  const { control, handleSubmit, watch, setValue } = useForm<TrainingProgram>({
+    defaultValues: initialProgram || {
       name: '',
       duration: 12,
       type: 'hyrox',
@@ -172,19 +177,61 @@ export const TrainingProgramBuilder = () => {
     }
   };
 
+  const handleAddWeek = () => {
+    const currentDuration = watch('duration');
+    setValue('duration', currentDuration + 1);
+  };
+
   const onSubmit = async (data: TrainingProgram) => {
-    try {
-      await trainingProgramsService.saveProgram(data);
+    // Validate required fields
+    if (!data.name?.trim()) {
       setSaveStatus({
         open: true,
-        message: 'Program saved successfully!',
+        message: 'Program name is required',
+        severity: 'error'
+      });
+      return;
+    }
+
+    if (!data.workouts?.length) {
+      setSaveStatus({
+        open: true,
+        message: 'At least one workout is required',
+        severity: 'error'
+      });
+      return;
+    }
+
+    try {
+      // Ensure all workouts have names
+      const validatedWorkouts = data.workouts.map(workout => ({
+        ...workout,
+        name: workout.name?.trim() || `${workout.type} Workout - Week ${workout.week} Day ${workout.day}`
+      }));
+
+      const updatedData = {
+        ...data,
+        workouts: validatedWorkouts
+      };
+
+      if (initialProgram?.id) {
+        await trainingProgramsService.updateProgram(initialProgram.id, updatedData);
+      } else {
+        await trainingProgramsService.saveProgram(updatedData);
+      }
+
+      setSaveStatus({
+        open: true,
+        message: `Program ${initialProgram ? 'updated' : 'saved'} successfully!`,
         severity: 'success'
       });
+      
+      onProgramCreated?.();
     } catch (error) {
       console.error('Error saving program:', error);
       setSaveStatus({
         open: true,
-        message: 'Failed to save program. Please try again.',
+        message: error instanceof Error ? error.message : 'Failed to save program. Please try again.',
         severity: 'error'
       });
     }
@@ -194,64 +241,58 @@ export const TrainingProgramBuilder = () => {
     <Container maxWidth="lg">
       <Paper elevation={3} sx={{ p: 3, mt: 3, borderRadius: 2 }}>
         <Typography variant="h5" component="h1" gutterBottom>
-          Create Training Program
+          {initialProgram ? 'Edit Training Program' : 'Create Training Program'}
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
-          <MuiGrid container spacing={3} component="div">
-            <MuiGrid item xs={12} md={6} component="div">
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: 'Program name is required' }}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="Program Name"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                  />
-                )}
-              />
-            </MuiGrid>
+          <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' } }}>
+            <Controller
+              name="name"
+              control={control}
+              rules={{ required: 'Program name is required' }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  label="Program Name"
+                  fullWidth
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
+            />
 
-            <MuiGrid item xs={12} md={3} component="div">
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Program Type"
-                    fullWidth
-                  >
-                    <MenuItem value="hyrox">Hyrox</MenuItem>
-                    <MenuItem value="triathlon">Triathlon</MenuItem>
-                    <MenuItem value="crossfit">CrossFit</MenuItem>
-                  </TextField>
-                )}
-              />
-            </MuiGrid>
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Program Type"
+                  fullWidth
+                >
+                  <MenuItem value="hyrox">Hyrox</MenuItem>
+                  <MenuItem value="triathlon">Triathlon</MenuItem>
+                  <MenuItem value="crossfit">CrossFit</MenuItem>
+                </TextField>
+              )}
+            />
 
-            <MuiGrid item xs={12} md={3} component="div">
-              <Controller
-                name="duration"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    type="number"
-                    label="Duration (weeks)"
-                    fullWidth
-                    InputProps={{ inputProps: { min: 1, max: 52 } }}
-                  />
-                )}
-              />
-            </MuiGrid>
+            <Controller
+              name="duration"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Duration (weeks)"
+                  fullWidth
+                  InputProps={{ inputProps: { min: 1, max: 52 } }}
+                />
+              )}
+            />
 
-            <MuiGrid item xs={12} component="div">
+            <Box sx={{ gridColumn: '1 / -1' }}>
               <Controller
                 name="description"
                 control={control}
@@ -265,12 +306,21 @@ export const TrainingProgramBuilder = () => {
                   />
                 )}
               />
-            </MuiGrid>
-          </MuiGrid>
+            </Box>
+          </Box>
 
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
-            Workouts
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 2 }}>
+            <Typography variant="h6">
+              Workouts
+            </Typography>
+            <Button
+              startIcon={<AddCircleIcon />}
+              onClick={handleAddWeek}
+              variant="outlined"
+            >
+              Add Week
+            </Button>
+          </Box>
 
           {Array.from({ length: programDuration }).map((_, weekIndex) => (
             <Accordion key={weekIndex}>
@@ -278,76 +328,74 @@ export const TrainingProgramBuilder = () => {
                 <Typography>Week {weekIndex + 1}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <MuiGrid container spacing={2} component="div">
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {Array.from({ length: 7 }).map((_, dayIndex) => (
-                    <MuiGrid item xs={12} key={dayIndex} component="div">
-                      <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1">
-                            Day {dayIndex + 1}
-                          </Typography>
-                          <Button
-                            startIcon={<AddIcon />}
-                            onClick={() => {
-                              setSelectedWeek(weekIndex + 1);
-                              setSelectedDay(dayIndex + 1);
-                              handleAddWorkout();
-                            }}
-                          >
-                            Add Workout
-                          </Button>
-                        </Box>
-                        {workouts
-                          .filter(w => w.week === weekIndex + 1 && w.day === dayIndex + 1)
-                          .map((workout) => {
-                            const globalIndex = workouts.findIndex(w => w.id === workout.id);
-                            return (
-                              <Box 
-                                key={workout.id} 
-                                sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center',
-                                  bgcolor: 'background.paper',
-                                  p: 1,
-                                  mb: 1,
-                                  borderRadius: 1
-                                }}
+                    <Paper variant="outlined" sx={{ p: 2, width: '100%' }} key={dayIndex}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="subtitle1">
+                          Day {dayIndex + 1}
+                        </Typography>
+                        <Button
+                          startIcon={<AddIcon />}
+                          onClick={() => {
+                            setSelectedWeek(weekIndex + 1);
+                            setSelectedDay(dayIndex + 1);
+                            handleAddWorkout();
+                          }}
+                        >
+                          Add Workout
+                        </Button>
+                      </Box>
+                      {workouts
+                        .filter(w => w.week === weekIndex + 1 && w.day === dayIndex + 1)
+                        .map((workout) => {
+                          const globalIndex = workouts.findIndex(w => w.id === workout.id);
+                          return (
+                            <Box 
+                              key={workout.id} 
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                bgcolor: 'background.paper',
+                                p: 1,
+                                mb: 1,
+                                borderRadius: 1
+                              }}
+                            >
+                              <Controller
+                                name={`workouts.${globalIndex}.name`}
+                                control={control}
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label="Workout Name"
+                                    sx={{ mr: 2, flexGrow: 1 }}
+                                  />
+                                )}
+                              />
+                              <Typography sx={{ mx: 2, color: 'text.secondary' }}>
+                                {workout.type.replace('-', ' ')}
+                              </Typography>
+                              <IconButton 
+                                onClick={() => handleEditWorkout(globalIndex)}
+                                size="small"
+                                sx={{ mr: 1 }}
                               >
-                                <Controller
-                                  name={`workouts.${globalIndex}.name`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      size="small"
-                                      label="Workout Name"
-                                      sx={{ mr: 2, flexGrow: 1 }}
-                                    />
-                                  )}
-                                />
-                                <Typography sx={{ mx: 2, color: 'text.secondary' }}>
-                                  {workout.type.replace('-', ' ')}
-                                </Typography>
-                                <IconButton 
-                                  onClick={() => handleEditWorkout(globalIndex)}
-                                  size="small"
-                                  sx={{ mr: 1 }}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton 
-                                  onClick={() => removeWorkout(globalIndex)}
-                                  size="small"
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
-                            );
-                          })}
-                      </Paper>
-                    </MuiGrid>
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton 
+                                onClick={() => removeWorkout(globalIndex)}
+                                size="small"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+                          );
+                        })}
+                    </Paper>
                   ))}
-                </MuiGrid>
+                </Box>
               </AccordionDetails>
             </Accordion>
           ))}
@@ -358,7 +406,7 @@ export const TrainingProgramBuilder = () => {
             fullWidth
             sx={{ mt: 3 }}
           >
-            Create Program
+            {initialProgram ? 'Update Program' : 'Create Program'}
           </Button>
         </Box>
       </Paper>
@@ -366,20 +414,19 @@ export const TrainingProgramBuilder = () => {
       <Dialog open={isWorkoutDialogOpen} onClose={() => setIsWorkoutDialogOpen(false)}>
         <DialogTitle>Select Workout Type</DialogTitle>
         <DialogContent>
-          <MuiGrid container spacing={2} sx={{ mt: 1 }} component="div">
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, mt: 1 }}>
             {workoutTypes.map((type) => (
-              <MuiGrid item xs={12} sm={6} key={type} component="div">
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => handleWorkoutSubmit(type)}
-                  sx={{ textTransform: 'capitalize' }}
-                >
-                  {type.replace('-', ' ')}
-                </Button>
-              </MuiGrid>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={() => handleWorkoutSubmit(type)}
+                sx={{ textTransform: 'capitalize' }}
+                key={type}
+              >
+                {type.replace('-', ' ')}
+              </Button>
             ))}
-          </MuiGrid>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsWorkoutDialogOpen(false)}>Cancel</Button>

@@ -65,6 +65,7 @@ export type Workout =
   | RecoveryWorkout;
 
 export interface TrainingProgram {
+  id?: string;
   name: string;
   type: 'hyrox' | 'triathlon' | 'crossfit';
   duration: number;
