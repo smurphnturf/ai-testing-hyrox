@@ -25,7 +25,9 @@ interface Props {
   onUpdateProgram: (program: TrainingProgram) => void;
 }
 
-const CalendarContainer = styled(Box)(({ theme }) => ({
+const CalendarContainer = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'ref',
+})(({ theme }) => ({
   overflowY: 'auto',
   maxHeight: 'calc(100vh - 200px)',
   marginTop: theme.spacing(2),
@@ -263,7 +265,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
         </Button>
       </Box>
 
-      <CalendarContainer>
+      <CalendarContainer ref={calendarContainerRef}>
         {Array.from({ length: 12 }, (_, monthIndex) => {
           const days = getMonthData(currentYear, monthIndex);
           return (
