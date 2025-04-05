@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm install @rollup/rollup-linux-x64-gnu",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
