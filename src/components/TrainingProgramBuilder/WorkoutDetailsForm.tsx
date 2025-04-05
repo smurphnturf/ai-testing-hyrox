@@ -3,14 +3,13 @@ import {
   Box,
   TextField,
   MenuItem,
-  Grid as MuiGrid,
   IconButton,
   Typography,
   Button,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import type { TrainingProgram, Workout, StrengthWorkout, AmrapWorkout, EmomWorkout } from '../types';
+import type { TrainingProgram, Workout, StrengthWorkout, AmrapWorkout, EmomWorkout } from './types';
 
 interface Props {
   control: Control<TrainingProgram>;
@@ -26,8 +25,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
     <Box>
       <Typography variant="subtitle2" gutterBottom>Exercises</Typography>
       {workout.type === 'strength' && (workout as StrengthWorkout).exercises?.map((_, exerciseIndex: number) => (
-        <MuiGrid container spacing={2} key={exerciseIndex}>
-          <MuiGrid item xs={12} sm={3}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={exerciseIndex}>
+          <Box sx={{ width: { xs: '100%', sm: '25%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.name`}
               control={control}
@@ -40,8 +39,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={6} sm={2}>
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '16.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.weight`}
               control={control}
@@ -55,8 +54,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={6} sm={2}>
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '16.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.reps`}
               control={control}
@@ -70,8 +69,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={6} sm={2}>
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '16.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.sets`}
               control={control}
@@ -85,8 +84,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={6} sm={2}>
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '16.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.restTime`}
               control={control}
@@ -100,8 +99,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={12} sm={1}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '8.33%' } }}>
             <IconButton
               onClick={() => onRemoveExercise?.(exerciseIndex)}
               color="error"
@@ -109,8 +108,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             >
               <DeleteIcon />
             </IconButton>
-          </MuiGrid>
-        </MuiGrid>
+          </Box>
+        </Box>
       ))}
       <Button
         startIcon={<AddIcon />}
@@ -125,8 +124,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
   );
 
   const renderRunningForm = () => (
-    <MuiGrid container spacing={2}>
-      <MuiGrid item xs={12} sm={6}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
         <Controller
           name={`workouts.${index}.distance`}
           control={control}
@@ -139,8 +138,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             />
           )}
         />
-      </MuiGrid>
-      <MuiGrid item xs={12} sm={6}>
+      </Box>
+      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
         <Controller
           name={`workouts.${index}.time`}
           control={control}
@@ -153,8 +152,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             />
           )}
         />
-      </MuiGrid>
-      <MuiGrid item xs={12} sm={6}>
+      </Box>
+      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
         <Controller
           name={`workouts.${index}.pace`}
           control={control}
@@ -167,8 +166,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             />
           )}
         />
-      </MuiGrid>
-      <MuiGrid item xs={12} sm={6}>
+      </Box>
+      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
         <Controller
           name={`workouts.${index}.effortLevel`}
           control={control}
@@ -187,14 +186,14 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             </TextField>
           )}
         />
-      </MuiGrid>
-    </MuiGrid>
+      </Box>
+    </Box>
   );
 
   const renderAmrapForm = () => (
     <Box>
-      <MuiGrid container spacing={2} sx={{ mb: 2 }}>
-        <MuiGrid item xs={12} sm={6}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+        <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
           <Controller
             name={`workouts.${index}.timeLimit`}
             control={control}
@@ -207,12 +206,12 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
               />
             )}
           />
-        </MuiGrid>
-      </MuiGrid>
+        </Box>
+      </Box>
       <Typography variant="subtitle2" gutterBottom>Exercises</Typography>
       {workout.type === 'amrap' && (workout as AmrapWorkout).exercises?.map((_, exerciseIndex: number) => (
-        <MuiGrid container spacing={2} key={exerciseIndex}>
-          <MuiGrid item xs={12} sm={6}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={exerciseIndex}>
+          <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.name`}
               control={control}
@@ -225,8 +224,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={12} sm={5}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '41.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.reps`}
               control={control}
@@ -240,8 +239,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={12} sm={1}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '8.33%' } }}>
             <IconButton
               onClick={() => onRemoveExercise?.(exerciseIndex)}
               color="error"
@@ -249,8 +248,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             >
               <DeleteIcon />
             </IconButton>
-          </MuiGrid>
-        </MuiGrid>
+          </Box>
+        </Box>
       ))}
       <Button
         startIcon={<AddIcon />}
@@ -266,8 +265,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
 
   const renderEmomForm = () => (
     <Box>
-      <MuiGrid container spacing={2} sx={{ mb: 2 }}>
-        <MuiGrid item xs={12} sm={6}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+        <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
           <Controller
             name={`workouts.${index}.roundTime`}
             control={control}
@@ -280,8 +279,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
               />
             )}
           />
-        </MuiGrid>
-        <MuiGrid item xs={12} sm={6}>
+        </Box>
+        <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
           <Controller
             name={`workouts.${index}.totalTime`}
             control={control}
@@ -294,12 +293,12 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
               />
             )}
           />
-        </MuiGrid>
-      </MuiGrid>
+        </Box>
+      </Box>
       <Typography variant="subtitle2" gutterBottom>Exercises</Typography>
       {workout.type === 'emom' && (workout as EmomWorkout).exercises?.map((_, exerciseIndex: number) => (
-        <MuiGrid container spacing={2} key={exerciseIndex}>
-          <MuiGrid item xs={12} sm={6}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={exerciseIndex}>
+          <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.name`}
               control={control}
@@ -312,8 +311,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={12} sm={5}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '41.66%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.reps`}
               control={control}
@@ -327,8 +326,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 />
               )}
             />
-          </MuiGrid>
-          <MuiGrid item xs={12} sm={1}>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '8.33%' } }}>
             <IconButton
               onClick={() => onRemoveExercise?.(exerciseIndex)}
               color="error"
@@ -336,8 +335,8 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
             >
               <DeleteIcon />
             </IconButton>
-          </MuiGrid>
-        </MuiGrid>
+          </Box>
+        </Box>
       ))}
       <Button
         startIcon={<AddIcon />}

@@ -68,7 +68,9 @@ export type Workout =
 export interface TrainingProgram {
   id?: string;
   name: string;
+  type?: string;
   duration: number;
-  startDate?: string; // Add start date to the program
+  description?: string;
+  startDate?: string;
   workouts: Workout[];
 }

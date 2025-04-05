@@ -16,6 +16,7 @@ import { trainingProgramsService } from '../../services/trainingPrograms';
 interface Props {
   onProgramCreated?: () => void;
   initialProgram?: TrainingProgram;
+  selectedDay?: { week: number; day: number } | null;
 }
 
 export const TrainingProgramBuilder = ({ onProgramCreated, initialProgram }: Props) => {

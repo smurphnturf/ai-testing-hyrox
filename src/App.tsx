@@ -202,14 +202,15 @@ function AppContent() {
         autoHideDuration={6000}
         onClose={() => setNotification(null)}
       >
-        {notification && (
+        {notification ? (
           <Alert 
             onClose={() => setNotification(null)} 
             severity={notification.severity}
+            sx={{ width: '100%' }}
           >
             {notification.message}
           </Alert>
-        )}
+        ) : undefined}
       </Snackbar>
     </>
   )
