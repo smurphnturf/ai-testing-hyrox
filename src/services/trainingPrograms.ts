@@ -64,9 +64,7 @@ export const trainingProgramsService = {
         {
           user_id: user.id,
           name: program.name,
-          type: program.type,
           duration: program.duration,
-          description: program.description,
           workouts: program.workouts
         }
       ])
@@ -117,9 +115,7 @@ export const trainingProgramsService = {
       .from('training_programs')
       .update({
         name: program.name,
-        type: program.type,
         duration: program.duration,
-        description: program.description,
         workouts: program.workouts
       })
       .eq('id', id)
@@ -150,5 +146,27 @@ export const trainingProgramsService = {
     if (error) {
       throw error
     }
-  }
+  },
+
+  async getUserProgram() {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      throw new Error('User must be authenticated to fetch programs')
+    }
+
+    const { data, error } = await supabase
+      .from('training_programs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw error
+    }
+
+    return data || null
+  },
 }

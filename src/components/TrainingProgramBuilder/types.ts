@@ -4,6 +4,7 @@ export interface BaseWorkout {
   type: string;
   week: number;
   day: number;
+  date?: string; // ISO string representation of the workout date
 }
 
 export interface Exercise {
@@ -67,8 +68,7 @@ export type Workout =
 export interface TrainingProgram {
   id?: string;
   name: string;
-  type: 'hyrox' | 'triathlon' | 'crossfit';
   duration: number;
-  description: string;
+  startDate?: string; // Add start date to the program
   workouts: Workout[];
 }
