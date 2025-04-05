@@ -54,7 +54,6 @@ button {
   background: transparent;
   color: var(--primary-color);
   cursor: pointer;
-  width: 100%;
   margin: 0.5rem 0;
 }
 

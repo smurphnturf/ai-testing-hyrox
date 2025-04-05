@@ -370,8 +370,8 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
               borderBottom: '1px solid',
               borderColor: 'divider',
             }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" pr={1}>
+                <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, pr: 2 }}>
                   {selectedWorkouts.date.toLocaleDateString('default', { 
                     weekday: 'long',
                     year: 'numeric',
@@ -385,13 +385,15 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                     setIsAddingWorkout(false);
                     setEditingWorkout(null);
                   }}
+                  size="small"
                   sx={{
+                    p: 1,
                     '&:hover': {
                       backgroundColor: 'rgba(0,0,0,0.04)',
                     }
                   }}
                 >
-                  <CloseIcon />
+                  <CloseIcon fontSize="small" />
                 </IconButton>
               </Box>
             </DialogTitle>
@@ -439,6 +441,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                           textTransform: 'none',
                           fontWeight: 600,
                           borderRadius: 2,
+                          width: '100%',
                         }}
                       >
                         Add Another Workout
@@ -478,12 +481,13 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                               size="small"
                               sx={{
                                 color: 'primary.main',
+                                padding: 1,
                                 '&:hover': {
                                   backgroundColor: 'rgba(62,207,142,0.1)',
                                 }
                               }}
                             >
-                              <EditIcon />
+                              <EditIcon fontSize="small" />
                             </IconButton>
                           </Box>
 
