@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -239,49 +239,6 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     onSave(workoutData);
   };
 
-  const handleAddExercise = () => {
-    if (!formData.exercises) return;
-
-    const newExercise = formData.type === 'strength'
-      ? { name: '', weight: null, reps: null, sets: null, restTime: 60 }
-      : { name: '', reps: null };
-
-    setFormData({
-      ...formData,
-      exercises: [...formData.exercises, newExercise],
-    });
-  };
-
-  const handleRemoveExercise = (index: number) => {
-    if (!formData.exercises) return;
-
-    setFormData({
-      ...formData,
-      exercises: formData.exercises.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleRemoveSegment = (index: number) => {
-    if (!formData.segments) return;
-
-    setFormData({
-      ...formData,
-      segments: formData.segments.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleUpdateStrengthSegment = (index: number, field: keyof FormStrengthExercise, value: string | number | null) => {
-    const newSegments = [...formData.segments!];
-    newSegments[index] = { ...newSegments[index], [field]: value } as FormStrengthExercise;
-    setFormData({ ...formData, segments: newSegments });
-  };
-
-  const handleUpdateRunningSegment = (index: number, field: keyof FormRunningSegment, value: number | null) => {
-    const newSegments = [...formData.segments!];
-    newSegments[index] = { ...newSegments[index], [field]: value } as FormRunningSegment;
-    setFormData({ ...formData, segments: newSegments });
-  };
-
   const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAddMenuAnchor(event.currentTarget);
   };
@@ -292,12 +249,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
 
   const handleAddStrengthSegment = () => {
     const newSegments = [...(formData.segments || [])];
-    newSegments.push({ 
-      name: '', 
-      weight: null, 
-      reps: null, 
-      sets: null, 
-      restTime: 60 
+    newSegments.push({
+      name: '',
+      weight: null,
+      reps: null,
+      sets: null,
+      restTime: 60
     } as FormStrengthExercise);
     setFormData({ ...formData, segments: newSegments });
     handleAddClose();
@@ -314,192 +271,450 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     handleAddClose();
   };
 
-  const renderExerciseFields = () => {
-    if (!formData.exercises) return null;
+  const handleUpdateRunningSegment = (index: number, field: keyof FormRunningSegment, value: number | null) => {
+    const newSegments = [...formData.segments!];
+    const segment = newSegments[index] as FormRunningSegment;
+    const updatedSegment = { ...segment };
+    updatedSegment[field] = value;
 
-    return (
-      <Box sx={{ mt: 3 }}>
-        <Typography 
-          variant="subtitle2" 
-          gutterBottom
+    // Auto-calculate logic same as renderRunningSegmentFields
+    if (field !== 'distance' && updatedSegment.distance !== null) {
+      if (field === 'time' && value !== null) {
+        updatedSegment.pace = value / updatedSegment.distance;
+      } else if (field === 'pace' && value !== null) {
+        updatedSegment.time = updatedSegment.distance * value;
+      }
+    } else if (field !== 'time' && updatedSegment.time !== null) {
+      if (field === 'distance' && value !== null) {
+        updatedSegment.pace = updatedSegment.time / value;
+      } else if (field === 'pace' && value !== null) {
+        updatedSegment.distance = updatedSegment.time / value;
+      }
+    } else if (field !== 'pace' && updatedSegment.pace !== null) {
+      if (field === 'distance' && value !== null) {
+        updatedSegment.time = value * updatedSegment.pace;
+      } else if (field === 'time' && value !== null) {
+        updatedSegment.distance = value / updatedSegment.pace;
+      }
+    }
+
+    newSegments[index] = updatedSegment;
+    setFormData({ ...formData, segments: newSegments });
+  };
+
+  const handleUpdateStrengthSegment = (
+    index: number, 
+    field: keyof FormStrengthExercise, 
+    value: string | number | null
+  ) => {
+    const newSegments = [...formData.segments!];
+    const segment = { ...newSegments[index] } as FormStrengthExercise;
+    if (typeof value === 'string' && field === 'name') {
+      segment.name = value;
+    } else if ((typeof value === 'number' || value === null) && field !== 'name') {
+      if (field === 'weight') segment.weight = value;
+      else if (field === 'reps') segment.reps = value;
+      else if (field === 'sets') segment.sets = value;
+      else if (field === 'restTime') segment.restTime = value ?? 60;
+    }
+    newSegments[index] = segment;
+    setFormData({ ...formData, segments: newSegments });
+  };
+
+  const handleRemoveSegment = (index: number) => {
+    const newSegments = [...formData.segments!];
+    newSegments.splice(index, 1);
+    setFormData({ ...formData, segments: newSegments });
+  };
+
+  const renderExerciseFields = () => (
+    <Box sx={{ mt: 3 }}>
+      <Typography 
+        variant="subtitle1" 
+        gutterBottom
+        sx={{ 
+          fontWeight: 600,
+          color: 'text.primary',
+          mb: 2
+        }}
+      >
+        Exercises
+      </Typography>
+      {formData.exercises?.map((exercise, index) => (
+        <Stack 
+          key={index} 
+          spacing={2} 
           sx={{ 
-            fontWeight: 600,
-            color: 'text.primary',
-            mb: 2
+            mb: 3,
+            p: 2,
+            backgroundColor: 'rgba(0,0,0,0.02)',
+            borderRadius: 2
           }}
         >
-          Exercises
-        </Typography>
-        {formData.exercises.map((exercise, index) => (
-          <Stack 
-            key={index} 
-            spacing={2} 
-            sx={{ 
-              mb: 2,
-              p: 2,
-              backgroundColor: 'rgba(0,0,0,0.02)',
-              borderRadius: 2,
-              position: 'relative'
-            }}
-          >
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Box flex={formData.type === 'strength' ? 3 : 6}>
-                <TextField
-                  label="Exercise Name"
-                  value={exercise.name}
-                  onChange={(e) => {
-                    const newExercises = [...formData.exercises!];
-                    newExercises[index] = { ...exercise, name: e.target.value };
-                    setFormData({ ...formData, exercises: newExercises });
-                  }}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'background.paper',
-                      borderRadius: 1.5,
-                    }
-                  }}
-                />
-              </Box>
-              {formData.type === 'strength' ? (
-                <>
-                  <Box flex={2}>
-                    <TextField
-                      label="Weight (kg)"
-                      type="tel"
-                      inputProps={{
-                        inputMode: "numeric",
-                        pattern: "[0-9]*"
-                      }}
-                      value={(exercise as FormStrengthExercise).weight || ''}
-                      placeholder="0"
-                      onChange={(e) => {
-                        const newExercises = [...formData.exercises!];
-                        newExercises[index] = { 
-                          ...exercise, 
-                          weight: e.target.value ? Number(e.target.value) : null 
-                        } as FormStrengthExercise;
-                        setFormData({ ...formData, exercises: newExercises });
-                      }}
-                      fullWidth
-                      size="small"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'background.paper',
-                          borderRadius: 1.5,
-                        },
-                        '& .MuiInputBase-input::placeholder': {
-                          color: 'text.disabled',
-                          opacity: 0.7
-                        }
-                      }}
-                    />
-                  </Box>
-                  <Box flex={2}>
-                    <TextField
-                      label="Sets"
-                      type="tel"
-                      inputProps={{
-                        inputMode: "numeric",
-                        pattern: "[0-9]*"
-                      }}
-                      value={(exercise as FormStrengthExercise).sets || ''}
-                      placeholder="0"
-                      onChange={(e) => {
-                        const newExercises = [...formData.exercises!];
-                        newExercises[index] = { 
-                          ...exercise, 
-                          sets: e.target.value ? Number(e.target.value) : null 
-                        } as FormStrengthExercise;
-                        setFormData({ ...formData, exercises: newExercises });
-                      }}
-                      fullWidth
-                      size="small"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'background.paper',
-                          borderRadius: 1.5,
-                        },
-                        '& .MuiInputBase-input::placeholder': {
-                          color: 'text.disabled',
-                          opacity: 0.7
-                        }
-                      }}
-                    />
-                  </Box>
-                </>
-              ) : null}
-              <Box flex={formData.type === 'strength' ? 2 : 5}>
-                <TextField
-                  label="Reps"
-                  type="tel"
-                  inputProps={{
-                    inputMode: "numeric",
-                    pattern: "[0-9]*"
-                  }}
-                  value={exercise.reps || ''}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const newExercises = [...formData.exercises!];
-                    newExercises[index] = { 
-                      ...exercise, 
-                      reps: e.target.value ? Number(e.target.value) : null 
-                    };
-                    setFormData({ ...formData, exercises: newExercises });
-                  }}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'background.paper',
-                      borderRadius: 1.5,
-                    },
-                    '& .MuiInputBase-input::placeholder': {
-                      color: 'text.disabled',
-                      opacity: 0.7
-                    }
-                  }}
-                />
-              </Box>
-            </Stack>
-            <Box 
-              display="flex" 
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mt: 1 }}
-            >
-              <IconButton
-                onClick={() => handleRemoveExercise(index)}
-                color="error"
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Box flex={3}>
+              <TextField
+                label="Exercise Name"
+                value={exercise.name}
+                onChange={(e) => {
+                  const newExercises = [...formData.exercises!];
+                  newExercises[index] = { ...newExercises[index], name: e.target.value };
+                  setFormData({ ...formData, exercises: newExercises });
+                }}
+                fullWidth
                 size="small"
                 sx={{
-                  backgroundColor: 'rgba(211,47,47,0.1)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(211,47,47,0.2)',
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'background.paper',
+                    borderRadius: 1.5,
                   }
                 }}
-              >
-                <DeleteIcon />
-              </IconButton>
+              />
+            </Box>
+            {formData.type === 'strength' ? (
+              <>
+                <Box flex={2}>
+                  <TextField
+                    label="Weight (kg)"
+                    type="tel"
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*"
+                    }}
+                    value={(exercise as FormStrengthExercise).weight || ''}
+                    placeholder="0"
+                    onChange={(e) => {
+                      const newExercises = [...formData.exercises!];
+                      newExercises[index] = { ...newExercises[index], weight: e.target.value ? Number(e.target.value) : null };
+                      setFormData({ ...formData, exercises: newExercises });
+                    }}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1.5,
+                      }
+                    }}
+                  />
+                </Box>
+                <Box flex={2}>
+                  <TextField
+                    label="Sets"
+                    type="tel"
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*"
+                    }}
+                    value={(exercise as FormStrengthExercise).sets || ''}
+                    placeholder="0"
+                    onChange={(e) => {
+                      const newExercises = [...formData.exercises!];
+                      newExercises[index] = { ...newExercises[index], sets: e.target.value ? Number(e.target.value) : null };
+                      setFormData({ ...formData, exercises: newExercises });
+                    }}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1.5,
+                      }
+                    }}
+                  />
+                </Box>
+              </>
+            ) : null}
+            <Box flex={2}>
+              <TextField
+                label="Reps"
+                type="tel"
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*"
+                }}
+                value={exercise.reps || ''}
+                placeholder="0"
+                onChange={(e) => {
+                  const newExercises = [...formData.exercises!];
+                  newExercises[index] = { ...newExercises[index], reps: e.target.value ? Number(e.target.value) : null };
+                  setFormData({ ...formData, exercises: newExercises });
+                }}
+                fullWidth
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'background.paper',
+                    borderRadius: 1.5,
+                  }
+                }}
+              />
             </Box>
           </Stack>
-        ))}
-        <Button
-          startIcon={<AddIcon />}
-          onClick={handleAddExercise}
-          variant="outlined"
-          size="small"
-          sx={{ 
-            mt: 1,
-            borderRadius: 1.5,
-            textTransform: 'none',
-            fontWeight: 600
+          <Box 
+            display="flex" 
+            justifyContent="center"
+            alignItems="center"
+            sx={{ mt: 1 }}
+          >
+            <IconButton
+              onClick={() => {
+                const newExercises = [...formData.exercises!];
+                newExercises.splice(index, 1);
+                setFormData({ ...formData, exercises: newExercises });
+              }}
+              color="error"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(211,47,47,0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(211,47,47,0.2)',
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </Stack>
+      ))}
+      <Button
+        startIcon={<AddIcon />}
+        onClick={() => {
+          if (!formData.exercises) return;
+          const newExercise = formData.type === 'strength'
+            ? { name: '', weight: null, reps: null, sets: null, restTime: 60 }
+            : { name: '', reps: null };
+          setFormData({
+            ...formData,
+            exercises: [...formData.exercises, newExercise],
+          });
+        }}
+        variant="outlined"
+        size="small"
+        sx={{ 
+          mt: 1,
+          borderRadius: 1.5,
+          textTransform: 'none',
+          fontWeight: 600
+        }}
+      >
+        Add Exercise
+      </Button>
+    </Box>
+  );
+
+  const renderRunningSegmentFields = (
+    segment: FormRunningSegment,
+    index: number,
+    onUpdate: (field: keyof FormRunningSegment, value: number | null) => void,
+    onDelete: () => void
+  ) => {
+    const timeToMinutesSeconds = (time: number | null) => {
+      if (time === null) return { minutes: '', seconds: '' };
+      const minutes = Math.floor(time);
+      const seconds = Math.round((time - minutes) * 60);
+      return { minutes: minutes.toString(), seconds: seconds.toString().padStart(2, '0') };
+    };
+
+    const minutesSecondsToTime = (minutes: string, seconds: string) => {
+      const mins = minutes ? parseFloat(minutes) : 0;
+      const secs = seconds ? parseFloat(seconds) : 0;
+      return mins + (secs / 60);
+    };
+
+    const { minutes: timeMinutes, seconds: timeSeconds } = timeToMinutesSeconds(segment.time);
+    const { minutes: paceMinutes, seconds: paceSeconds } = timeToMinutesSeconds(segment.pace);
+
+    return (
+      <Stack 
+        spacing={2.5} 
+        sx={{ 
+          mb: 3,
+          p: 2,
+          backgroundColor: 'rgba(0,0,0,0.02)',
+          borderRadius: 2
+        }}
+      >
+        <Typography variant="subtitle2" gutterBottom>
+          Running Segment {index + 1}
+        </Typography>
+        <TextField
+          label="Distance (km)"
+          type="text"
+          inputProps={{
+            inputMode: "decimal"
           }}
+          value={segment.distance || ''}
+          placeholder="0.0"
+          onChange={(e) => {
+            const value = e.target.value.replace(',', '.');
+            // Allow only numbers and one decimal point
+            if (/^\d*\.?\d*$/.test(value) || value === '') {
+              const numValue = value ? parseFloat(value) : null;
+              onUpdate('distance', numValue);
+              
+              // Auto-calculate pace if time is available
+              if (numValue !== null && segment.time !== null) {
+                onUpdate('pace', segment.time / numValue);
+              }
+            }
+          }}
+          fullWidth
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'background.paper',
+              borderRadius: 1.5,
+            }
+          }}
+        />
+        <Typography variant="subtitle2" gutterBottom>
+          Time
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            label="Minutes"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={timeMinutes}
+            placeholder="0"
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              const newTime = minutesSecondsToTime(value, timeSeconds);
+              onUpdate('time', newTime);
+              
+              // Auto-calculate pace if distance is available
+              if (segment.distance !== null) {
+                onUpdate('pace', newTime / segment.distance);
+              }
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              }
+            }}
+          />
+          <TextField
+            label="Seconds"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={timeSeconds}
+            placeholder="00"
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 59)) {
+                const newTime = minutesSecondsToTime(timeMinutes, value);
+                onUpdate('time', newTime);
+                
+                // Auto-calculate pace if distance is available
+                if (segment.distance !== null) {
+                  onUpdate('pace', newTime / segment.distance);
+                }
+              }
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              }
+            }}
+          />
+        </Stack>
+        <Typography variant="subtitle2" gutterBottom>
+          Pace (min/km)
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            label="Minutes"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={paceMinutes}
+            placeholder="0"
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              const newPace = minutesSecondsToTime(value, paceSeconds);
+              onUpdate('pace', newPace);
+              
+              // Auto-calculate time if distance is available
+              if (segment.distance !== null) {
+                onUpdate('time', segment.distance * newPace);
+              }
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              }
+            }}
+          />
+          <TextField
+            label="Seconds"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={paceSeconds}
+            placeholder="00"
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 59)) {
+                const newPace = minutesSecondsToTime(paceMinutes, value);
+                onUpdate('pace', newPace);
+                
+                // Auto-calculate time if distance is available
+                if (segment.distance !== null) {
+                  onUpdate('time', segment.distance * newPace);
+                }
+              }
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              }
+            }}
+          />
+        </Stack>
+        <Box 
+          display="flex" 
+          justifyContent="center"
+          alignItems="center"
+          sx={{ mt: 1 }}
         >
-          Add Exercise
-        </Button>
-      </Box>
+          <IconButton
+            onClick={onDelete}
+            color="error"
+            size="small"
+            sx={{
+              backgroundColor: 'rgba(211,47,47,0.1)',
+              '&:hover': {
+                backgroundColor: 'rgba(211,47,47,0.2)',
+              }
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      </Stack>
     );
   };
 
@@ -516,187 +731,20 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       >
         Running Segments
       </Typography>
-      {formData.segments?.map((segment, index) => {
-        const runningSegment = segment as FormRunningSegment;
-        const handleFieldChange = (field: keyof FormRunningSegment, value: number | null) => {
-          const newSegments = [...formData.segments!];
-          const updatedSegment = { ...runningSegment };
-          updatedSegment[field] = value;
-
-          // Auto-calculate the third field based on which two fields were entered
-          if (field !== 'distance' && updatedSegment.distance !== null) {
-            if (field === 'time' && value !== null) {
-              updatedSegment.pace = value / updatedSegment.distance;
-            } else if (field === 'pace' && value !== null) {
-              updatedSegment.time = updatedSegment.distance * value;
-            }
-          } else if (field !== 'time' && updatedSegment.time !== null) {
-            if (field === 'distance' && value !== null) {
-              updatedSegment.pace = updatedSegment.time / value;
-            } else if (field === 'pace' && value !== null) {
-              updatedSegment.distance = updatedSegment.time / value;
-            }
-          } else if (field !== 'pace' && updatedSegment.pace !== null) {
-            if (field === 'distance' && value !== null) {
-              updatedSegment.time = value * updatedSegment.pace;
-            } else if (field === 'time' && value !== null) {
-              updatedSegment.distance = value / updatedSegment.pace;
-            }
+      {formData.segments?.map((segment, index) => (
+        <React.Fragment key={`segment-${index}`}>
+          {('distance' in segment) ? 
+            renderRunningSegmentFields(
+              segment as FormRunningSegment,
+              index,
+              (field, value) => handleUpdateRunningSegment(index, field, value),
+              () => handleRemoveSegment(index)
+            )
+            :
+            null
           }
-
-          newSegments[index] = updatedSegment;
-          setFormData({ ...formData, segments: newSegments });
-        };
-
-        const timeToMinutesSeconds = (time: number | null) => {
-          if (time === null) return { minutes: '', seconds: '' };
-          const minutes = Math.floor(time);
-          const seconds = Math.round((time - minutes) * 60);
-          return { minutes: minutes.toString(), seconds: seconds.toString().padStart(2, '0') };
-        };
-
-        const minutesSecondsToTime = (minutes: string, seconds: string) => {
-          const mins = minutes ? parseFloat(minutes) : 0;
-          const secs = seconds ? parseFloat(seconds) : 0;
-          return mins + (secs / 60);
-        };
-
-        const { minutes, seconds } = timeToMinutesSeconds(runningSegment.time);
-
-        return (
-          <Stack 
-            key={index} 
-            spacing={2.5} 
-            sx={{ 
-              mb: 3,
-              p: 2,
-              backgroundColor: 'rgba(0,0,0,0.02)',
-              borderRadius: 2
-            }}
-          >
-            <Typography variant="subtitle2" gutterBottom>
-              Running Segment {index + 1}
-            </Typography>
-            <TextField
-              label="Distance (km)"
-              type="number"
-              inputProps={{
-                step: "0.1",
-                min: "0"
-              }}
-              value={runningSegment.distance || ''}
-              placeholder="0.0"
-              onChange={(e) => handleFieldChange('distance', e.target.value ? parseFloat(e.target.value) : null)}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'text.disabled',
-                  opacity: 0.7
-                }
-              }}
-            />
-            <Stack direction="row" spacing={1}>
-              <TextField
-                label="Minutes"
-                type="number"
-                inputProps={{
-                  min: "0",
-                  step: "1"
-                }}
-                value={minutes}
-                placeholder="0"
-                onChange={(e) => {
-                  const newTime = minutesSecondsToTime(e.target.value, seconds);
-                  handleFieldChange('time', newTime);
-                }}
-                fullWidth
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'background.paper',
-                    borderRadius: 1.5,
-                  }
-                }}
-              />
-              <TextField
-                label="Seconds"
-                type="number"
-                inputProps={{
-                  min: "0",
-                  max: "59",
-                  step: "1"
-                }}
-                value={seconds}
-                placeholder="00"
-                onChange={(e) => {
-                  const newTime = minutesSecondsToTime(minutes, e.target.value);
-                  handleFieldChange('time', newTime);
-                }}
-                fullWidth
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'background.paper',
-                    borderRadius: 1.5,
-                  }
-                }}
-              />
-            </Stack>
-            <TextField
-              label="Pace (min/km)"
-              type="number"
-              inputProps={{
-                step: "0.1",
-                min: "0"
-              }}
-              value={runningSegment.pace || ''}
-              placeholder="0.0"
-              onChange={(e) => handleFieldChange('pace', e.target.value ? parseFloat(e.target.value) : null)}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'text.disabled',
-                  opacity: 0.7
-                }
-              }}
-            />
-            <Box 
-              display="flex" 
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mt: 1 }}
-            >
-              <IconButton
-                onClick={() => {
-                  const newSegments = [...formData.segments!];
-                  newSegments.splice(index, 1);
-                  setFormData({ ...formData, segments: newSegments });
-                }}
-                color="error"
-                size="small"
-                sx={{
-                  backgroundColor: 'rgba(211,47,47,0.1)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(211,47,47,0.2)',
-                  }
-                }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          </Stack>
-        );
-      })}
+        </React.Fragment>
+      ))}
       <Button
         startIcon={<AddIcon />}
         onClick={() => {
@@ -846,68 +894,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               }}
             >
               {isRunningSegment ? (
-                <>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Running Segment {index + 1}
-                  </Typography>
-                  <TextField
-                    label="Distance (km)"
-                    type="tel"
-                    inputProps={{
-                      inputMode: "numeric",
-                      pattern: "[0-9]*"
-                    }}
-                    value={(segment as FormRunningSegment).distance || ''}
-                    placeholder="0"
-                    onChange={(e) => handleUpdateRunningSegment(index, 'distance', e.target.value ? Number(e.target.value) : null)}
-                    fullWidth
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1.5,
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Time (minutes)"
-                    type="tel"
-                    inputProps={{
-                      inputMode: "numeric",
-                      pattern: "[0-9]*"
-                    }}
-                    value={(segment as FormRunningSegment).time || ''}
-                    placeholder="0"
-                    onChange={(e) => handleUpdateRunningSegment(index, 'time', e.target.value ? Number(e.target.value) : null)}
-                    fullWidth
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1.5,
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Pace (min/km)"
-                    type="tel"
-                    inputProps={{
-                      inputMode: "numeric",
-                      pattern: "[0-9]*"
-                    }}
-                    value={(segment as FormRunningSegment).pace || ''}
-                    placeholder="0"
-                    onChange={(e) => handleUpdateRunningSegment(index, 'pace', e.target.value ? Number(e.target.value) : null)}
-                    fullWidth
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1.5,
-                      }
-                    }}
-                  />
-                </>
+                renderRunningSegmentFields(
+                  segment as FormRunningSegment,
+                  index,
+                  (field, value) => handleUpdateRunningSegment(index, field, value),
+                  () => handleRemoveSegment(index)
+                )
               ) : (
                 <>
                   <Typography variant="subtitle2" gutterBottom>

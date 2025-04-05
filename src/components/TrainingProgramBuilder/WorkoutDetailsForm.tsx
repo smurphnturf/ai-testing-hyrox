@@ -135,7 +135,17 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 <TextField
                   {...field}
                   label="Distance (km)"
-                  type="number"
+                  type="text"
+                  inputProps={{
+                    inputMode: "decimal"
+                  }}
+                  value={field.value || ''}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(',', '.');
+                    if (/^\d*\.?\d*$/.test(value) || value === '') {
+                      field.onChange(value ? parseFloat(value) : null);
+                    }
+                  }}
                   size="small"
                   fullWidth
                 />
