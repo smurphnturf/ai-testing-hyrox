@@ -31,11 +31,12 @@ const CalendarContainer = styled(Box, {
   overflowY: 'auto',
   maxHeight: 'calc(100vh - 200px)',
   marginTop: theme.spacing(2),
-  padding: theme.spacing(1),
+  padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(1)} 0`,
   borderRadius: theme.spacing(2),
   backgroundColor: 'rgba(0,0,0,0.02)',
+  marginLeft: 0,
   [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(2),
+    padding: `${theme.spacing(2)} ${theme.spacing(2)} ${theme.spacing(2)} 0`,
   }
 }));
 
@@ -50,7 +51,7 @@ const CalendarGrid = styled(Box)(({ theme }) => ({
 }));
 
 const DayCell = styled(Paper)(({ theme }) => ({
-  minHeight: '100px',
+  minHeight: '80px',
   padding: theme.spacing(1),
   display: 'flex',
   flexDirection: 'column',
@@ -65,7 +66,7 @@ const DayCell = styled(Paper)(({ theme }) => ({
     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
   },
   [theme.breakpoints.up('sm')]: {
-    minHeight: '120px',
+    minHeight: '80px',
     padding: theme.spacing(2),
     gap: theme.spacing(1),
     borderRadius: theme.spacing(1.5),
@@ -111,6 +112,7 @@ const MonthContainer = styled(Box)(({ theme }) => ({
 
 const MonthHeader = styled(Typography)(({ theme }) => ({
   padding: theme.spacing(2),
+  paddingLeft: 0,
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   borderRadius: theme.spacing(1.5),
@@ -148,7 +150,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
   const currentYear = today.getFullYear();
 
   const getMonthHeight = () => {
-    return 48 + 40 + (6 * 100) + 32;
+    return 48 + 40 + (6 * 80) + 32;  // MonthHeader + WeekDayHeader + (6 rows * cell height) + bottom margin
   };
 
   useEffect(() => {
@@ -247,13 +249,14 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
   };
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', margin: 0, padding: 0 }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
         mb: 3,
-        px: 2,
+        pr: 2,
+        pl: 0
       }}>
         <Typography 
           variant="h5"
