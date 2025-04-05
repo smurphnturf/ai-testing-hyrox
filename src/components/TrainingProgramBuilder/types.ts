@@ -18,6 +18,19 @@ export interface StrengthExercise extends Exercise {
   restTime: number;
 }
 
+// Form state interfaces with nullable fields
+export interface FormExercise {
+  name: string;
+  reps: number | null;
+}
+
+export interface FormStrengthExercise extends Omit<FormExercise, 'reps'> {
+  weight: number | null;
+  reps: number | null;
+  sets: number | null;
+  restTime: number;
+}
+
 export interface StrengthWorkout extends BaseWorkout {
   type: 'strength';
   exercises: StrengthExercise[];
@@ -36,6 +49,14 @@ export interface RunningSegment {
   distance: number;
   pace: number;
   time: number;
+  heartRate?: number;
+  effortLevel: number;
+}
+
+export interface FormRunningSegment {
+  distance: number | null;
+  pace: number | null;
+  time: number | null;
   heartRate?: number;
   effortLevel: number;
 }
