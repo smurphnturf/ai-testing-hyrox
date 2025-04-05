@@ -2,7 +2,6 @@ import { Control, Controller, UseFormRegister } from 'react-hook-form';
 import {
   Box,
   TextField,
-  MenuItem,
   IconButton,
   Typography,
   Button,
@@ -124,69 +123,75 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
   );
 
   const renderRunningForm = () => (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
-        <Controller
-          name={`workouts.${index}.distance`}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Distance (km)"
-              type="number"
-              fullWidth
+    <Box>
+      <Typography variant="subtitle2" gutterBottom>Running Segments</Typography>
+      {workout.type === 'running' && workout.runningSegments?.map((_, segmentIndex: number) => (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={segmentIndex}>
+          <Box sx={{ width: { xs: '100%', sm: '25%' } }}>
+            <Controller
+              name={`workouts.${index}.runningSegments.${segmentIndex}.distance`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Distance (km)"
+                  type="number"
+                  size="small"
+                  fullWidth
+                />
+              )}
             />
-          )}
-        />
-      </Box>
-      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
-        <Controller
-          name={`workouts.${index}.time`}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Time (minutes)"
-              type="number"
-              fullWidth
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '25%' } }}>
+            <Controller
+              name={`workouts.${index}.runningSegments.${segmentIndex}.time`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Time (minutes)"
+                  type="number"
+                  size="small"
+                  fullWidth
+                />
+              )}
             />
-          )}
-        />
-      </Box>
-      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
-        <Controller
-          name={`workouts.${index}.pace`}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Pace (min/km)"
-              type="number"
-              fullWidth
+          </Box>
+          <Box sx={{ width: { xs: '50%', sm: '25%' } }}>
+            <Controller
+              name={`workouts.${index}.runningSegments.${segmentIndex}.pace`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Pace (min/km)"
+                  type="number"
+                  size="small"
+                  fullWidth
+                />
+              )}
             />
-          )}
-        />
-      </Box>
-      <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
-        <Controller
-          name={`workouts.${index}.effortLevel`}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              select
-              label="Effort Level"
-              fullWidth
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '8.33%' } }}>
+            <IconButton
+              onClick={() => onRemoveExercise?.(segmentIndex)}
+              color="error"
+              size="small"
             >
-              {[1, 2, 3, 4, 5].map((level) => (
-                <MenuItem key={level} value={level}>
-                  Level {level}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
-      </Box>
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      ))}
+      <Button
+        startIcon={<AddIcon />}
+        onClick={onAddExercise}
+        variant="outlined"
+        size="small"
+        sx={{ mt: 1 }}
+      >
+        Add Segment
+      </Button>
     </Box>
   );
 

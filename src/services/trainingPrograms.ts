@@ -14,8 +14,14 @@ const validateWorkout = (workout: Workout) => {
       })
       break
     case 'running':
-      if (workout.distance <= 0) throw new Error(`Invalid distance for running workout "${workout.name}"`)
-      if (workout.time <= 0) throw new Error(`Invalid time for running workout "${workout.name}"`)
+      if (!workout.runningSegments?.length) {
+        throw new Error(`Running workout "${workout.name}" must have at least one segment`)
+      }
+      workout.runningSegments.forEach(segment => {
+        if (segment.distance <= 0) throw new Error(`Invalid distance for running segment in workout "${workout.name}"`)
+        if (segment.time <= 0) throw new Error(`Invalid time for running segment in workout "${workout.name}"`)
+        if (segment.pace <= 0) throw new Error(`Invalid pace for running segment in workout "${workout.name}"`)
+      })
       break
     case 'amrap':
       if (!workout.exercises?.length) {

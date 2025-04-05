@@ -504,15 +504,11 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
 
                             {workout.type === 'running' && (
                               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                  Distance: {workout.distance}km
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  Target Time: {workout.time} minutes
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  Target Pace: {workout.pace} min/km
-                                </Typography>
+                                {workout.runningSegments.map((segment, i) => (
+                                  <Typography key={i} variant="body2" color="text.secondary">
+                                    Distance: {segment.distance}km, Time: {segment.time} minutes, Pace: {segment.pace} min/km
+                                  </Typography>
+                                ))}
                               </Box>
                             )}
 

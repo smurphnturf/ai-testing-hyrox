@@ -421,7 +421,7 @@ export function TrainingProgramList() {
                         </Box>
                       )}
 
-                      {workout.type === 'running' && (
+                      {workout.type === 'running' && workout.runningSegments?.map((segment, i) => (
                         <Typography 
                           variant="body2"
                           sx={{
@@ -430,10 +430,11 @@ export function TrainingProgramList() {
                             borderLeft: '2px solid',
                             borderColor: 'divider'
                           }}
+                          key={i}
                         >
-                          Distance: {workout.distance}km, Target Time: {workout.time} minutes
+                          Distance: {segment.distance}km, Time: {segment.time} minutes, Pace: {segment.pace} min/km
                         </Typography>
-                      )}
+                      ))}
 
                       {(workout.type === 'amrap' || workout.type === 'emom') && workout.exercises && (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
