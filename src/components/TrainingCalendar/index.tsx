@@ -29,6 +29,9 @@ const CalendarContainer = styled(Box)(({ theme }) => ({
   overflowY: 'auto',
   maxHeight: 'calc(100vh - 200px)',
   marginTop: theme.spacing(2),
+  padding: theme.spacing(2),
+  borderRadius: theme.spacing(2),
+  backgroundColor: 'rgba(0,0,0,0.02)',
 }));
 
 const CalendarGrid = styled(Box)(({ theme }) => ({
@@ -40,14 +43,18 @@ const CalendarGrid = styled(Box)(({ theme }) => ({
 
 const DayCell = styled(Paper)(({ theme }) => ({
   minHeight: '120px',
-  padding: theme.spacing(1),
+  padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(1),
   cursor: 'pointer',
   position: 'relative',
+  borderRadius: theme.spacing(1.5),
+  transition: 'all 0.3s ease',
+  backgroundColor: theme.palette.background.paper,
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
   },
 }));
 
@@ -55,22 +62,25 @@ const DateHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  paddingBottom: theme.spacing(0.5),
+  paddingBottom: theme.spacing(1),
   marginBottom: theme.spacing(1),
 }));
 
 const DateNumber = styled(Typography)(() => ({
   fontSize: '0.875rem',
-  fontWeight: 'medium',
+  fontWeight: 600,
 }));
 
 const WorkoutDot = styled('div')(({ theme }) => ({
-  width: '8px',
-  height: '8px',
+  width: '6px',
+  height: '6px',
   borderRadius: '50%',
   backgroundColor: theme.palette.primary.main,
   margin: '2px',
+  transition: 'transform 0.2s ease',
+  '&:hover': {
+    transform: 'scale(1.2)',
+  },
 }));
 
 const WorkoutDotsContainer = styled(Box)({
@@ -89,8 +99,11 @@ const MonthHeader = styled(Typography)(({ theme }) => ({
   padding: theme.spacing(2),
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: theme.spacing(1.5),
   marginBottom: theme.spacing(2),
+  fontWeight: 600,
+  textAlign: 'center',
+  boxShadow: '0 4px 12px rgba(62,207,142,0.2)',
 }));
 
 const WeekDayHeader = styled(Box)(({ theme }) => ({
@@ -101,7 +114,9 @@ const WeekDayHeader = styled(Box)(({ theme }) => ({
   '& > *': {
     textAlign: 'center',
     padding: theme.spacing(1),
-    fontWeight: 'bold',
+    fontWeight: 600,
+    color: theme.palette.text.secondary,
+    fontSize: '0.875rem',
   },
 }));
 
@@ -219,19 +234,36 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 3,
+        px: 2,
+      }}>
+        <Typography 
+          variant="h5"
+          sx={{ 
+            fontWeight: 700,
+            color: 'text.primary',
+          }}
+        >
           {program.name}
         </Typography>
         <Button 
           startIcon={<EditIcon />}
           onClick={onEditProgram}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
         >
           Edit Program
         </Button>
       </Box>
 
-      <CalendarContainer ref={calendarContainerRef}>
+      <CalendarContainer>
         {Array.from({ length: 12 }, (_, monthIndex) => {
           const days = getMonthData(currentYear, monthIndex);
           return (
@@ -253,12 +285,13 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                   return (
                     <DayCell 
                       key={i} 
-                      elevation={1}
+                      elevation={0}
                       onClick={() => handleDayClick(date)}
                       sx={{
                         opacity: isCurrentMonth ? 1 : 0.3,
                         border: isToday ? '2px solid' : 'none',
                         borderColor: 'primary.main',
+                        backgroundColor: isToday ? 'rgba(62,207,142,0.05)' : 'background.paper',
                       }}
                     >
                       <DateHeader>
@@ -287,108 +320,190 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
         onClose={() => setSelectedWorkouts(null)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden',
+          }
+        }}
       >
         {selectedWorkouts && (
           <>
-            <DialogTitle>
+            <DialogTitle sx={{
+              p: 3,
+              backgroundColor: 'background.paper',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}>
               <Box display="flex" justifyContent="space-between" alignItems="center">
-                {selectedWorkouts.date.toLocaleDateString('default', { 
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-                <IconButton onClick={() => setSelectedWorkouts(null)}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  {selectedWorkouts.date.toLocaleDateString('default', { 
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </Typography>
+                <IconButton 
+                  onClick={() => setSelectedWorkouts(null)}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.04)',
+                    }
+                  }}
+                >
                   <CloseIcon />
                 </IconButton>
               </Box>
             </DialogTitle>
             {!isAddingWorkout ? (
-              <DialogContent>
+              <DialogContent sx={{ p: 3 }}>
                 {selectedWorkouts.workouts.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 2 }}>
-                    <Typography color="text.secondary">No workouts scheduled for this day</Typography>
+                  <Box sx={{ 
+                    textAlign: 'center', 
+                    py: 4,
+                    backgroundColor: 'rgba(0,0,0,0.02)',
+                    borderRadius: 2,
+                  }}>
+                    <Typography 
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      No workouts scheduled for this day
+                    </Typography>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       onClick={() => setIsAddingWorkout(true)}
                       startIcon={<AddIcon />}
-                      sx={{ mt: 2 }}
+                      sx={{ 
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        borderRadius: 2,
+                      }}
                     >
                       Add Workout
                     </Button>
                   </Box>
                 ) : (
                   <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'flex-end', 
+                      mb: 3
+                    }}>
                       <Button
                         variant="outlined"
                         onClick={() => setIsAddingWorkout(true)}
                         startIcon={<AddIcon />}
                         size="small"
+                        sx={{ 
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          borderRadius: 2,
+                        }}
                       >
                         Add Another Workout
                       </Button>
                     </Box>
-                    {selectedWorkouts.workouts.map((workout) => (
-                      <Box key={workout.id} sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                          <Typography variant="h6">
-                            {workout.name || `${workout.type} Workout`}
-                          </Typography>
-                          <IconButton onClick={onEditProgram} size="small">
-                            <EditIcon />
-                          </IconButton>
-                        </Box>
-
-                        {workout.type === 'strength' && (
-                          <Box>
-                            {workout.exercises.map((exercise, i) => (
-                              <Typography key={i} variant="body1" gutterBottom>
-                                {exercise.name}: {exercise.sets} sets × {exercise.reps} reps @ {exercise.weight}kg
-                              </Typography>
-                            ))}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {selectedWorkouts.workouts.map((workout) => (
+                        <Paper
+                          key={workout.id}
+                          sx={{ 
+                            p: 3,
+                            borderRadius: 2,
+                            position: 'relative',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: '4px',
+                              backgroundColor: 'primary.main',
+                              borderRadius: '4px 0 0 4px',
+                            }
+                          }}
+                        >
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            mb: 2
+                          }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              {workout.name || `${workout.type} Workout`}
+                            </Typography>
+                            <IconButton 
+                              onClick={onEditProgram}
+                              size="small"
+                              sx={{
+                                color: 'primary.main',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(62,207,142,0.1)',
+                                }
+                              }}
+                            >
+                              <EditIcon />
+                            </IconButton>
                           </Box>
-                        )}
 
-                        {workout.type === 'running' && (
-                          <Box>
-                            <Typography variant="body1" gutterBottom>
-                              Distance: {workout.distance}km
-                            </Typography>
-                            <Typography variant="body1" gutterBottom>
-                              Target Time: {workout.time} minutes
-                            </Typography>
-                            <Typography variant="body1">
-                              Target Pace: {workout.pace} min/km
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {(workout.type === 'amrap' || workout.type === 'emom') && (
-                          <Box>
-                            {workout.type === 'amrap' ? (
-                              <Typography variant="body2" gutterBottom>
-                                Time Limit: {workout.timeLimit} minutes
-                              </Typography>
-                            ) : (
-                              <>
-                                <Typography variant="body2" gutterBottom>
-                                  Round Time: {workout.roundTime} seconds
-                                </Typography>
-                                <Typography variant="body2" gutterBottom>
-                                  Total Time: {workout.totalTime} minutes
-                                </Typography>
-                              </>
+                          <Box sx={{ pl: 2, borderLeft: '1px solid', borderColor: 'divider' }}>
+                            {workout.type === 'strength' && (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {workout.exercises.map((exercise, i) => (
+                                  <Typography key={i} variant="body2" color="text.secondary">
+                                    {exercise.name}: {exercise.sets} sets × {exercise.reps} reps @ {exercise.weight}kg
+                                  </Typography>
+                                ))}
+                              </Box>
                             )}
-                            {workout.exercises.map((exercise, i) => (
-                              <Typography key={i} variant="body1">
-                                {exercise.name}: {exercise.reps} reps
-                              </Typography>
-                            ))}
+
+                            {workout.type === 'running' && (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  Distance: {workout.distance}km
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Target Time: {workout.time} minutes
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Target Pace: {workout.pace} min/km
+                                </Typography>
+                              </Box>
+                            )}
+
+                            {(workout.type === 'amrap' || workout.type === 'emom') && (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Typography 
+                                  variant="body2"
+                                  sx={{
+                                    color: 'primary.main',
+                                    backgroundColor: 'rgba(62,207,142,0.1)',
+                                    py: 0.5,
+                                    px: 1,
+                                    borderRadius: 1,
+                                    display: 'inline-block',
+                                    mb: 1,
+                                  }}
+                                >
+                                  {workout.type === 'amrap' ? (
+                                    `Time Limit: ${workout.timeLimit} minutes`
+                                  ) : (
+                                    `Round Time: ${workout.roundTime}s / Total: ${workout.totalTime} minutes`
+                                  )}
+                                </Typography>
+                                {workout.exercises.map((exercise, i) => (
+                                  <Typography key={i} variant="body2" color="text.secondary">
+                                    {exercise.name}: {exercise.reps} reps
+                                  </Typography>
+                                ))}
+                              </Box>
+                            )}
                           </Box>
-                        )}
-                      </Box>
-                    ))}
+                        </Paper>
+                      ))}
+                    </Box>
                   </Box>
                 )}
               </DialogContent>
@@ -413,6 +528,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
         <Alert
           onClose={() => setError(null)}
           severity="error"
+          sx={{ borderRadius: 2 }}
         >
           {error}
         </Alert>

@@ -1,4 +1,4 @@
-import { CssBaseline, AppBar, Toolbar, Button, Box, Snackbar, Alert, CircularProgress } from '@mui/material'
+import { CssBaseline, AppBar, Toolbar, Button, Box, Snackbar, Alert, CircularProgress, ThemeProvider, createTheme } from '@mui/material'
 import { useState, useEffect } from 'react'
 import './App.css'
 import TrainingProgramBuilder from './components/TrainingProgramBuilder'
@@ -7,6 +7,94 @@ import { Auth } from './components/Auth'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { trainingProgramsService } from './services/trainingPrograms'
 import { TrainingProgram } from './components/TrainingProgramBuilder/types'
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#3ECF8E',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#ffffff',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#1a1a1a',
+      secondary: '#666666',
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    h1: {
+      fontWeight: 700,
+    },
+    h2: {
+      fontWeight: 700,
+    },
+    h3: {
+      fontWeight: 700,
+    },
+    h4: {
+      fontWeight: 700,
+    },
+    h5: {
+      fontWeight: 700,
+    },
+    h6: {
+      fontWeight: 700,
+    },
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 8,
+          padding: '8px 16px',
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(62,207,142,0.2)',
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#1a1a1a',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+  },
+});
 
 function AppContent() {
   const { user, signOut } = useAuth()
@@ -130,8 +218,10 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <CssBaseline />
-      <AppContent />
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   )
 }
