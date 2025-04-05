@@ -56,8 +56,7 @@ export interface FormRunningSegment {
 
 export interface CompromisedRunWorkout extends BaseWorkout {
   type: 'compromised-run';
-  strengthExercises: StrengthExercise[];
-  runningSegments: RunningSegment[];
+  segments: (StrengthExercise | RunningSegment)[];
 }
 
 export interface AmrapWorkout extends BaseWorkout {

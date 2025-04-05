@@ -9,7 +9,7 @@ import {
   DialogContent,
   Typography,
   Stack,
-  Divider,
+  Menu,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -42,8 +42,7 @@ interface WorkoutFormState {
   name: string;
   type: typeof workoutTypes[number];
   exercises?: (FormExercise | FormStrengthExercise)[];
-  strengthExercises?: FormStrengthExercise[];
-  runningSegments?: FormRunningSegment[];
+  segments?: (FormStrengthExercise | FormRunningSegment)[];
   distance?: number | null;
   time?: number | null;
   pace?: number | null;
@@ -70,6 +69,7 @@ interface FormExercise extends Omit<Exercise, 'reps'> {
 }
 
 export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWorkout }: Props) {
+  const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
   const [formData, setFormData] = useState<WorkoutFormState>(() => {
     if (initialWorkout) {
       return {
@@ -92,18 +92,24 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
           })),
         }),
         ...(initialWorkout.type === 'compromised-run' && {
-          strengthExercises: initialWorkout.strengthExercises.map(e => ({
-            ...e,
-            weight: e.weight,
-            reps: e.reps,
-            sets: e.sets
-          })),
-          runningSegments: initialWorkout.runningSegments.map(s => ({
-            ...s,
-            distance: s.distance,
-            time: s.time,
-            pace: s.pace
-          })),
+          segments: initialWorkout.segments.map(segment => {
+            if ('distance' in segment) {
+              return {
+                ...segment,
+                distance: segment.distance,
+                time: segment.time,
+                pace: segment.pace
+              } as FormRunningSegment;
+            } else {
+              return {
+                ...segment,
+                weight: segment.weight,
+                reps: segment.reps,
+                sets: segment.sets,
+                restTime: segment.restTime
+              } as FormStrengthExercise;
+            }
+          })
         }),
         ...(initialWorkout.type === 'amrap' && {
           timeLimit: initialWorkout.timeLimit,
@@ -140,38 +146,30 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     switch (type) {
       case 'strength':
         newFormData.exercises = [{ name: '', weight: null, reps: null, sets: null, restTime: 60 }] as FormStrengthExercise[];
-        delete newFormData.runningSegments;
+        delete newFormData.segments;
         break;
       case 'running':
-        newFormData.runningSegments = [{
+        newFormData.segments = [{
           distance: null,
           time: null,
           pace: null
-        }];
+        }] as FormRunningSegment[];
         delete newFormData.exercises;
-        delete newFormData.strengthExercises;
         break;
       case 'compromised-run':
-        newFormData.strengthExercises = [{ name: '', weight: null, reps: null, sets: null, restTime: 60 }] as FormStrengthExercise[];
-        newFormData.runningSegments = [{
-          distance: null,
-          time: null,
-          pace: null
-        }];
+        newFormData.segments = [];
         delete newFormData.exercises;
         break;
       case 'amrap':
         newFormData.timeLimit = null;
         newFormData.exercises = [{ name: '', reps: null }] as FormExercise[];
-        delete newFormData.strengthExercises;
-        delete newFormData.runningSegments;
+        delete newFormData.segments;
         break;
       case 'emom':
         newFormData.roundTime = null;
         newFormData.totalTime = null;
         newFormData.exercises = [{ name: '', reps: null }] as FormExercise[];
-        delete newFormData.strengthExercises;
-        delete newFormData.runningSegments;
+        delete newFormData.segments;
         break;
     }
 
@@ -196,25 +194,30 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
         })),
       }),
       ...(formData.type === 'running' && {
-        runningSegments: (formData.runningSegments as FormRunningSegment[]).map(s => ({
+        runningSegments: (formData.segments as FormRunningSegment[]).map(s => ({
           distance: s.distance || 0,
           time: s.time || 0,
           pace: s.pace || 0,
         })),
       }),
       ...(formData.type === 'compromised-run' && {
-        strengthExercises: (formData.strengthExercises as FormStrengthExercise[]).map(e => ({
-          name: e.name,
-          weight: e.weight || 0,
-          reps: e.reps || 0,
-          sets: e.sets || 0,
-          restTime: e.restTime
-        })),
-        runningSegments: (formData.runningSegments as FormRunningSegment[]).map(s => ({
-          distance: s.distance || 0,
-          time: s.time || 0,
-          pace: s.pace || 0,
-        })),
+        segments: (formData.segments as (FormStrengthExercise | FormRunningSegment)[]).map(segment => {
+          if ('distance' in segment) {
+            return {
+              distance: segment.distance || 0,
+              time: segment.time || 0,
+              pace: segment.pace || 0,
+            };
+          } else {
+            return {
+              name: segment.name,
+              weight: segment.weight || 0,
+              reps: segment.reps || 0,
+              sets: segment.sets || 0,
+              restTime: segment.restTime
+            };
+          }
+        }),
       }),
       ...(formData.type === 'amrap' && {
         timeLimit: formData.timeLimit || 0,
@@ -234,52 +237,6 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     } as Workout;
 
     onSave(workoutData);
-  };
-
-  const handleAddStrengthExercise = () => {
-    if (!formData.strengthExercises) return;
-    
-    setFormData({
-      ...formData,
-      strengthExercises: [...formData.strengthExercises, { 
-        name: '', 
-        weight: null, 
-        reps: null, 
-        sets: null, 
-        restTime: 60 
-      }],
-    });
-  };
-
-  const handleRemoveStrengthExercise = (index: number) => {
-    if (!formData.strengthExercises) return;
-
-    setFormData({
-      ...formData,
-      strengthExercises: formData.strengthExercises.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleAddRunningSegment = () => {
-    if (!formData.runningSegments) return;
-    
-    setFormData({
-      ...formData,
-      runningSegments: [...formData.runningSegments, {
-        distance: null,
-        time: null,
-        pace: null
-      }],
-    });
-  };
-
-  const handleRemoveRunningSegment = (index: number) => {
-    if (!formData.runningSegments) return;
-
-    setFormData({
-      ...formData,
-      runningSegments: formData.runningSegments.filter((_, i) => i !== index),
-    });
   };
 
   const handleAddExercise = () => {
@@ -302,6 +259,59 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       ...formData,
       exercises: formData.exercises.filter((_, i) => i !== index),
     });
+  };
+
+  const handleRemoveSegment = (index: number) => {
+    if (!formData.segments) return;
+
+    setFormData({
+      ...formData,
+      segments: formData.segments.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleUpdateStrengthSegment = (index: number, field: keyof FormStrengthExercise, value: string | number | null) => {
+    const newSegments = [...formData.segments!];
+    newSegments[index] = { ...newSegments[index], [field]: value } as FormStrengthExercise;
+    setFormData({ ...formData, segments: newSegments });
+  };
+
+  const handleUpdateRunningSegment = (index: number, field: keyof FormRunningSegment, value: number | null) => {
+    const newSegments = [...formData.segments!];
+    newSegments[index] = { ...newSegments[index], [field]: value } as FormRunningSegment;
+    setFormData({ ...formData, segments: newSegments });
+  };
+
+  const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAddMenuAnchor(event.currentTarget);
+  };
+
+  const handleAddClose = () => {
+    setAddMenuAnchor(null);
+  };
+
+  const handleAddStrengthSegment = () => {
+    const newSegments = [...(formData.segments || [])];
+    newSegments.push({ 
+      name: '', 
+      weight: null, 
+      reps: null, 
+      sets: null, 
+      restTime: 60 
+    } as FormStrengthExercise);
+    setFormData({ ...formData, segments: newSegments });
+    handleAddClose();
+  };
+
+  const handleAddRunningSegment = () => {
+    const newSegments = [...(formData.segments || [])];
+    newSegments.push({
+      distance: null,
+      time: null,
+      pace: null
+    } as FormRunningSegment);
+    setFormData({ ...formData, segments: newSegments });
+    handleAddClose();
   };
 
   const renderExerciseFields = () => {
@@ -506,7 +516,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       >
         Running Segments
       </Typography>
-      {formData.runningSegments?.map((segment, index) => (
+      {formData.segments?.map((segment, index) => (
         <Stack 
           key={index} 
           spacing={2.5} 
@@ -527,12 +537,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               inputMode: "numeric",
               pattern: "[0-9]*"
             }}
-            value={segment.distance || ''}
+            value={(segment as FormRunningSegment).distance || ''}
             placeholder="0"
             onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, distance: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
+              const newSegments = [...formData.segments!];
+              newSegments[index] = { ...segment, distance: e.target.value ? Number(e.target.value) : null } as FormRunningSegment;
+              setFormData({ ...formData, segments: newSegments });
             }}
             fullWidth
             size="small"
@@ -554,12 +564,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               inputMode: "numeric",
               pattern: "[0-9]*"
             }}
-            value={segment.time || ''}
+            value={(segment as FormRunningSegment).time || ''}
             placeholder="0"
             onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, time: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
+              const newSegments = [...formData.segments!];
+              newSegments[index] = { ...segment, time: e.target.value ? Number(e.target.value) : null } as FormRunningSegment;
+              setFormData({ ...formData, segments: newSegments });
             }}
             fullWidth
             size="small"
@@ -581,12 +591,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               inputMode: "numeric",
               pattern: "[0-9]*"
             }}
-            value={segment.pace || ''}
+            value={(segment as FormRunningSegment).pace || ''}
             placeholder="0"
             onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, pace: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
+              const newSegments = [...formData.segments!];
+              newSegments[index] = { ...segment, pace: e.target.value ? Number(e.target.value) : null } as FormRunningSegment;
+              setFormData({ ...formData, segments: newSegments });
             }}
             fullWidth
             size="small"
@@ -608,7 +618,11 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
             sx={{ mt: 1 }}
           >
             <IconButton
-              onClick={() => handleRemoveRunningSegment(index)}
+              onClick={() => {
+                const newSegments = [...formData.segments!];
+                newSegments.splice(index, 1);
+                setFormData({ ...formData, segments: newSegments });
+              }}
               color="error"
               size="small"
               sx={{
@@ -625,327 +639,15 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       ))}
       <Button
         startIcon={<AddIcon />}
-        onClick={handleAddRunningSegment}
-        variant="outlined"
-        size="small"
-        sx={{ 
-          mt: 1,
-          borderRadius: 1.5,
-          textTransform: 'none',
-          fontWeight: 600
+        onClick={() => {
+          const newSegments = [...(formData.segments || [])];
+          newSegments.push({
+            distance: null,
+            time: null,
+            pace: null
+          } as FormRunningSegment);
+          setFormData({ ...formData, segments: newSegments });
         }}
-      >
-        Add Running Segment
-      </Button>
-    </Box>
-  );
-
-  const renderCompromisedRunFields = () => (
-    <Box sx={{ mt: 3 }}>
-      {/* Strength Exercises Section */}
-      <Typography 
-        variant="subtitle1" 
-        gutterBottom
-        sx={{ 
-          fontWeight: 600,
-          color: 'text.primary',
-          mb: 2
-        }}
-      >
-        Strength Exercises
-      </Typography>
-      {formData.strengthExercises?.map((exercise, index) => (
-        <Stack 
-          key={index} 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={2} 
-          sx={{ 
-            mb: 2,
-            p: 2,
-            backgroundColor: 'rgba(0,0,0,0.02)',
-            borderRadius: 2,
-            position: 'relative'
-          }}
-        >
-          <Box flex={3}>
-            <TextField
-              label="Exercise Name"
-              value={exercise.name}
-              onChange={(e) => {
-                const newExercises = [...formData.strengthExercises!];
-                newExercises[index] = { ...exercise, name: e.target.value };
-                setFormData({ ...formData, strengthExercises: newExercises });
-              }}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                }
-              }}
-            />
-          </Box>
-          <Box flex={2}>
-            <TextField
-              label="Weight (kg)"
-              type="tel"
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*"
-              }}
-              value={exercise.weight || ''}
-              placeholder="0"
-              onChange={(e) => {
-                const newExercises = [...formData.strengthExercises!];
-                newExercises[index] = { ...exercise, weight: e.target.value ? Number(e.target.value) : null };
-                setFormData({ ...formData, strengthExercises: newExercises });
-              }}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'text.disabled',
-                  opacity: 0.7
-                }
-              }}
-            />
-          </Box>
-          <Box flex={2}>
-            <TextField
-              label="Sets"
-              type="tel"
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*"
-              }}
-              value={exercise.sets || ''}
-              placeholder="0"
-              onChange={(e) => {
-                const newExercises = [...formData.strengthExercises!];
-                newExercises[index] = { ...exercise, sets: e.target.value ? Number(e.target.value) : null };
-                setFormData({ ...formData, strengthExercises: newExercises });
-              }}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'text.disabled',
-                  opacity: 0.7
-                }
-              }}
-            />
-          </Box>
-          <Box flex={2}>
-            <TextField
-              label="Reps"
-              type="tel"
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*"
-              }}
-              value={exercise.reps || ''}
-              placeholder="0"
-              onChange={(e) => {
-                const newExercises = [...formData.strengthExercises!];
-                newExercises[index] = { ...exercise, reps: e.target.value ? Number(e.target.value) : null };
-                setFormData({ ...formData, strengthExercises: newExercises });
-              }}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'background.paper',
-                  borderRadius: 1.5,
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'text.disabled',
-                  opacity: 0.7
-                }
-              }}
-            />
-          </Box>
-          <Box 
-            flex={1} 
-            display="flex" 
-            alignItems="center" 
-            justifyContent="center"
-          >
-            <IconButton
-              onClick={() => handleRemoveStrengthExercise(index)}
-              color="error"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(211,47,47,0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(211,47,47,0.2)',
-                }
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        </Stack>
-      ))}
-      <Button
-        startIcon={<AddIcon />}
-        onClick={handleAddStrengthExercise}
-        variant="outlined"
-        size="small"
-        sx={{ 
-          mt: 1,
-          mb: 4,
-          borderRadius: 1.5,
-          textTransform: 'none',
-          fontWeight: 600
-        }}
-      >
-        Add Strength Exercise
-      </Button>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* Running Segments Section */}
-      <Typography 
-        variant="subtitle1" 
-        gutterBottom
-        sx={{ 
-          fontWeight: 600,
-          color: 'text.primary',
-          mb: 2
-        }}
-      >
-        Running Segments
-      </Typography>
-      {formData.runningSegments?.map((segment, index) => (
-        <Stack 
-          key={index} 
-          spacing={2.5} 
-          sx={{ 
-            mb: 3,
-            p: 2,
-            backgroundColor: 'rgba(0,0,0,0.02)',
-            borderRadius: 2,
-            position: 'relative'
-          }}
-        >
-          <Typography variant="subtitle2" gutterBottom>
-            Running Segment {index + 1}
-          </Typography>
-          <TextField
-            label="Distance (km)"
-            type="tel"
-            inputProps={{
-              inputMode: "numeric",
-              pattern: "[0-9]*"
-            }}
-            value={segment.distance || ''}
-            placeholder="0"
-            onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, distance: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
-            }}
-            fullWidth
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper',
-                borderRadius: 1.5,
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'text.disabled',
-                opacity: 0.7
-              }
-            }}
-          />
-          <TextField
-            label="Time (minutes)"
-            type="tel"
-            inputProps={{
-              inputMode: "numeric",
-              pattern: "[0-9]*"
-            }}
-            value={segment.time || ''}
-            placeholder="0"
-            onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, time: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
-            }}
-            fullWidth
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper',
-                borderRadius: 1.5,
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'text.disabled',
-                opacity: 0.7
-              }
-            }}
-          />
-          <TextField
-            label="Pace (min/km)"
-            type="tel"
-            inputProps={{
-              inputMode: "numeric",
-              pattern: "[0-9]*"
-            }}
-            value={segment.pace || ''}
-            placeholder="0"
-            onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, pace: e.target.value ? Number(e.target.value) : null };
-              setFormData({ ...formData, runningSegments: newSegments });
-            }}
-            fullWidth
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper',
-                borderRadius: 1.5,
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'text.disabled',
-                opacity: 0.7
-              }
-            }}
-          />
-          <Box 
-            display="flex" 
-            justifyContent="center"
-            alignItems="center"
-            sx={{ mt: 2 }}
-          >
-            <IconButton
-              onClick={() => handleRemoveRunningSegment(index)}
-              color="error"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(211,47,47,0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(211,47,47,0.2)',
-                }
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        </Stack>
-      ))}
-      <Button
-        startIcon={<AddIcon />}
-        onClick={handleAddRunningSegment}
         variant="outlined"
         size="small"
         sx={{ 
@@ -1037,6 +739,228 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       {renderExerciseFields()}
     </Box>
   );
+
+  const renderCompromisedRunFields = () => {
+    return (
+      <Box sx={{ mt: 3 }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          <Button
+            startIcon={<AddIcon />}
+            onClick={handleAddClick}
+            variant="outlined"
+            size="small"
+            sx={{ 
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 600
+            }}
+          >
+            Add Segment
+          </Button>
+          <Menu
+            anchorEl={addMenuAnchor}
+            open={Boolean(addMenuAnchor)}
+            onClose={handleAddClose}
+          >
+            <MenuItem onClick={handleAddStrengthSegment}>
+              Add Strength Exercise
+            </MenuItem>
+            <MenuItem onClick={handleAddRunningSegment}>
+              Add Running Segment
+            </MenuItem>
+          </Menu>
+        </Stack>
+
+        {formData.segments?.map((segment, index) => {
+          const isRunningSegment = 'distance' in segment;
+          
+          return (
+            <Stack 
+              key={index} 
+              spacing={2} 
+              sx={{ 
+                mb: 3,
+                p: 2,
+                backgroundColor: 'rgba(0,0,0,0.02)',
+                borderRadius: 2
+              }}
+            >
+              {isRunningSegment ? (
+                <>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Running Segment {index + 1}
+                  </Typography>
+                  <TextField
+                    label="Distance (km)"
+                    type="tel"
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*"
+                    }}
+                    value={(segment as FormRunningSegment).distance || ''}
+                    placeholder="0"
+                    onChange={(e) => handleUpdateRunningSegment(index, 'distance', e.target.value ? Number(e.target.value) : null)}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1.5,
+                      }
+                    }}
+                  />
+                  <TextField
+                    label="Time (minutes)"
+                    type="tel"
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*"
+                    }}
+                    value={(segment as FormRunningSegment).time || ''}
+                    placeholder="0"
+                    onChange={(e) => handleUpdateRunningSegment(index, 'time', e.target.value ? Number(e.target.value) : null)}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1.5,
+                      }
+                    }}
+                  />
+                  <TextField
+                    label="Pace (min/km)"
+                    type="tel"
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*"
+                    }}
+                    value={(segment as FormRunningSegment).pace || ''}
+                    placeholder="0"
+                    onChange={(e) => handleUpdateRunningSegment(index, 'pace', e.target.value ? Number(e.target.value) : null)}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'background.paper',
+                        borderRadius: 1.5,
+                      }
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Strength Exercise {index + 1}
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <Box flex={3}>
+                      <TextField
+                        label="Exercise Name"
+                        value={(segment as FormStrengthExercise).name}
+                        onChange={(e) => handleUpdateStrengthSegment(index, 'name', e.target.value)}
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'background.paper',
+                            borderRadius: 1.5,
+                          }
+                        }}
+                      />
+                    </Box>
+                    <Box flex={2}>
+                      <TextField
+                        label="Weight (kg)"
+                        type="tel"
+                        inputProps={{
+                          inputMode: "numeric",
+                          pattern: "[0-9]*"
+                        }}
+                        value={(segment as FormStrengthExercise).weight || ''}
+                        placeholder="0"
+                        onChange={(e) => handleUpdateStrengthSegment(index, 'weight', e.target.value ? Number(e.target.value) : null)}
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'background.paper',
+                            borderRadius: 1.5,
+                          }
+                        }}
+                      />
+                    </Box>
+                    <Box flex={2}>
+                      <TextField
+                        label="Sets"
+                        type="tel"
+                        inputProps={{
+                          inputMode: "numeric",
+                          pattern: "[0-9]*"
+                        }}
+                        value={(segment as FormStrengthExercise).sets || ''}
+                        placeholder="0"
+                        onChange={(e) => handleUpdateStrengthSegment(index, 'sets', e.target.value ? Number(e.target.value) : null)}
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'background.paper',
+                            borderRadius: 1.5,
+                          }
+                        }}
+                      />
+                    </Box>
+                    <Box flex={2}>
+                      <TextField
+                        label="Reps"
+                        type="tel"
+                        inputProps={{
+                          inputMode: "numeric",
+                          pattern: "[0-9]*"
+                        }}
+                        value={(segment as FormStrengthExercise).reps || ''}
+                        placeholder="0"
+                        onChange={(e) => handleUpdateStrengthSegment(index, 'reps', e.target.value ? Number(e.target.value) : null)}
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'background.paper',
+                            borderRadius: 1.5,
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Stack>
+                </>
+              )}
+              <Box 
+                display="flex" 
+                justifyContent="center"
+                alignItems="center"
+                sx={{ mt: 1 }}
+              >
+                <IconButton
+                  onClick={() => handleRemoveSegment(index)}
+                  color="error"
+                  size="small"
+                  sx={{
+                    backgroundColor: 'rgba(211,47,47,0.1)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(211,47,47,0.2)',
+                    }
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Stack>
+          );
+        })}
+      </Box>
+    );
+  };
 
   return (
     <>
