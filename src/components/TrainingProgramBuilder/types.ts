@@ -38,19 +38,13 @@ export interface StrengthWorkout extends BaseWorkout {
 
 export interface RunningWorkout extends BaseWorkout {
   type: 'running';
-  distance: number;
-  pace: number;
-  time: number;
-  heartRate?: number;
-  effortLevel: number;
+  runningSegments: RunningSegment[];
 }
 
 export interface RunningSegment {
   distance: number;
-  pace: number;
   time: number;
-  heartRate?: number;
-  effortLevel: number;
+  pace: number;
 }
 
 export interface FormRunningSegment {
@@ -58,7 +52,6 @@ export interface FormRunningSegment {
   pace: number | null;
   time: number | null;
   heartRate?: number;
-  effortLevel: number;
 }
 
 export interface CompromisedRunWorkout extends BaseWorkout {

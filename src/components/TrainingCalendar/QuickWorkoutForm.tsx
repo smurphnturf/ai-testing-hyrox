@@ -84,10 +84,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
           }))
         }),
         ...(initialWorkout.type === 'running' && {
-          distance: initialWorkout.distance,
-          time: initialWorkout.time,
-          pace: initialWorkout.pace,
-          effortLevel: initialWorkout.effortLevel,
+          runningSegments: initialWorkout.runningSegments.map(s => ({
+            ...s,
+            distance: s.distance,
+            time: s.time,
+            pace: s.pace
+          })),
         }),
         ...(initialWorkout.type === 'compromised-run' && {
           strengthExercises: initialWorkout.strengthExercises.map(e => ({
@@ -138,25 +140,23 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     switch (type) {
       case 'strength':
         newFormData.exercises = [{ name: '', weight: null, reps: null, sets: null, restTime: 60 }] as FormStrengthExercise[];
-        delete newFormData.strengthExercises;
         delete newFormData.runningSegments;
         break;
       case 'running':
-        newFormData.distance = null;
-        newFormData.time = null;
-        newFormData.pace = null;
-        newFormData.effortLevel = 3;
+        newFormData.runningSegments = [{
+          distance: null,
+          time: null,
+          pace: null
+        }];
         delete newFormData.exercises;
         delete newFormData.strengthExercises;
-        delete newFormData.runningSegments;
         break;
       case 'compromised-run':
         newFormData.strengthExercises = [{ name: '', weight: null, reps: null, sets: null, restTime: 60 }] as FormStrengthExercise[];
         newFormData.runningSegments = [{
           distance: null,
           time: null,
-          pace: null,
-          effortLevel: 3
+          pace: null
         }];
         delete newFormData.exercises;
         break;
@@ -196,10 +196,11 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
         })),
       }),
       ...(formData.type === 'running' && {
-        distance: formData.distance || 0,
-        time: formData.time || 0,
-        pace: formData.pace || 0,
-        effortLevel: formData.effortLevel!,
+        runningSegments: (formData.runningSegments as FormRunningSegment[]).map(s => ({
+          distance: s.distance || 0,
+          time: s.time || 0,
+          pace: s.pace || 0,
+        })),
       }),
       ...(formData.type === 'compromised-run' && {
         strengthExercises: (formData.strengthExercises as FormStrengthExercise[]).map(e => ({
@@ -213,7 +214,6 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
           distance: s.distance || 0,
           time: s.time || 0,
           pace: s.pace || 0,
-          effortLevel: s.effortLevel
         })),
       }),
       ...(formData.type === 'amrap' && {
@@ -268,8 +268,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       runningSegments: [...formData.runningSegments, {
         distance: null,
         time: null,
-        pace: null,
-        effortLevel: 3
+        pace: null
       }],
     });
   };
@@ -495,89 +494,150 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
   };
 
   const renderRunningFields = () => (
-    <Stack spacing={2.5} sx={{ mt: 3 }}>
-      <TextField
-        label="Distance (km)"
-        type="tel"
-        inputProps={{
-          inputMode: "numeric",
-          pattern: "[0-9]*"
-        }}
-        value={formData.distance || ''}
-        placeholder="0"
-        onChange={(e) => setFormData({ ...formData, distance: e.target.value ? Number(e.target.value) : null })}
-        fullWidth
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1.5,
-          },
-          '& .MuiInputBase-input::placeholder': {
-            color: 'text.disabled',
-            opacity: 0.7
-          }
-        }}
-      />
-      <TextField
-        label="Time (minutes)"
-        type="tel"
-        inputProps={{
-          inputMode: "numeric",
-          pattern: "[0-9]*"
-        }}
-        value={formData.time || ''}
-        placeholder="0"
-        onChange={(e) => setFormData({ ...formData, time: e.target.value ? Number(e.target.value) : null })}
-        fullWidth
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1.5,
-          },
-          '& .MuiInputBase-input::placeholder': {
-            color: 'text.disabled',
-            opacity: 0.7
-          }
-        }}
-      />
-      <TextField
-        label="Pace (min/km)"
-        type="tel"
-        inputProps={{
-          inputMode: "numeric",
-          pattern: "[0-9]*"
-        }}
-        value={formData.pace || ''}
-        placeholder="0"
-        onChange={(e) => setFormData({ ...formData, pace: e.target.value ? Number(e.target.value) : null })}
-        fullWidth
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1.5,
-          },
-          '& .MuiInputBase-input::placeholder': {
-            color: 'text.disabled',
-            opacity: 0.7
-          }
-        }}
-      />
-      <TextField
-        select
-        label="Effort Level"
-        value={formData.effortLevel}
-        onChange={(e) => setFormData({ ...formData, effortLevel: Number(e.target.value) })}
-        fullWidth
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1.5,
-          }
+    <Box sx={{ mt: 3 }}>
+      <Typography 
+        variant="subtitle1" 
+        gutterBottom
+        sx={{ 
+          fontWeight: 600,
+          color: 'text.primary',
+          mb: 2
         }}
       >
-        {[1, 2, 3, 4, 5].map((level) => (
-          <MenuItem key={level} value={level}>
-            Level {level}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Stack>
+        Running Segments
+      </Typography>
+      {formData.runningSegments?.map((segment, index) => (
+        <Stack 
+          key={index} 
+          spacing={2.5} 
+          sx={{ 
+            mb: 3,
+            p: 2,
+            backgroundColor: 'rgba(0,0,0,0.02)',
+            borderRadius: 2
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom>
+            Running Segment {index + 1}
+          </Typography>
+          <TextField
+            label="Distance (km)"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={segment.distance || ''}
+            placeholder="0"
+            onChange={(e) => {
+              const newSegments = [...formData.runningSegments!];
+              newSegments[index] = { ...segment, distance: e.target.value ? Number(e.target.value) : null };
+              setFormData({ ...formData, runningSegments: newSegments });
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: 'text.disabled',
+                opacity: 0.7
+              }
+            }}
+          />
+          <TextField
+            label="Time (minutes)"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={segment.time || ''}
+            placeholder="0"
+            onChange={(e) => {
+              const newSegments = [...formData.runningSegments!];
+              newSegments[index] = { ...segment, time: e.target.value ? Number(e.target.value) : null };
+              setFormData({ ...formData, runningSegments: newSegments });
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: 'text.disabled',
+                opacity: 0.7
+              }
+            }}
+          />
+          <TextField
+            label="Pace (min/km)"
+            type="tel"
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+            value={segment.pace || ''}
+            placeholder="0"
+            onChange={(e) => {
+              const newSegments = [...formData.runningSegments!];
+              newSegments[index] = { ...segment, pace: e.target.value ? Number(e.target.value) : null };
+              setFormData({ ...formData, runningSegments: newSegments });
+            }}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+                borderRadius: 1.5,
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: 'text.disabled',
+                opacity: 0.7
+              }
+            }}
+          />
+          <Box 
+            display="flex" 
+            justifyContent="center"
+            alignItems="center"
+            sx={{ mt: 1 }}
+          >
+            <IconButton
+              onClick={() => handleRemoveRunningSegment(index)}
+              color="error"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(211,47,47,0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(211,47,47,0.2)',
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </Stack>
+      ))}
+      <Button
+        startIcon={<AddIcon />}
+        onClick={handleAddRunningSegment}
+        variant="outlined"
+        size="small"
+        sx={{ 
+          mt: 1,
+          borderRadius: 1.5,
+          textTransform: 'none',
+          fontWeight: 600
+        }}
+      >
+        Add Running Segment
+      </Button>
+    </Box>
   );
 
   const renderCompromisedRunFields = () => (
@@ -777,27 +837,6 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
             position: 'relative'
           }}
         >
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              right: 8,
-              top: 8,
-            }}
-          >
-            <IconButton
-              onClick={() => handleRemoveRunningSegment(index)}
-              color="error"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(211,47,47,0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(211,47,47,0.2)',
-                }
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
           <Typography variant="subtitle2" gutterBottom>
             Running Segment {index + 1}
           </Typography>
@@ -882,30 +921,26 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               }
             }}
           />
-          <TextField
-            select
-            label="Effort Level"
-            value={segment.effortLevel}
-            onChange={(e) => {
-              const newSegments = [...formData.runningSegments!];
-              newSegments[index] = { ...segment, effortLevel: Number(e.target.value) };
-              setFormData({ ...formData, runningSegments: newSegments });
-            }}
-            fullWidth
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper',
-                borderRadius: 1.5,
-              }
-            }}
+          <Box 
+            display="flex" 
+            justifyContent="center"
+            alignItems="center"
+            sx={{ mt: 2 }}
           >
-            {[1, 2, 3, 4, 5].map((level) => (
-              <MenuItem key={level} value={level}>
-                Level {level}
-              </MenuItem>
-            ))}
-          </TextField>
+            <IconButton
+              onClick={() => handleRemoveRunningSegment(index)}
+              color="error"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(211,47,47,0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(211,47,47,0.2)',
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
         </Stack>
       ))}
       <Button
