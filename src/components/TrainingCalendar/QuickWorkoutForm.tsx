@@ -324,7 +324,6 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
         {formData.exercises.map((exercise, index) => (
           <Stack 
             key={index} 
-            direction={{ xs: 'column', sm: 'row' }} 
             spacing={2} 
             sx={{ 
               mb: 2,
@@ -334,135 +333,132 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               position: 'relative'
             }}
           >
-            <Box flex={formData.type === 'strength' ? 3 : 6}>
-              <TextField
-                label="Exercise Name"
-                value={exercise.name}
-                onChange={(e) => {
-                  const newExercises = [...formData.exercises!];
-                  newExercises[index] = { ...exercise, name: e.target.value };
-                  setFormData({ ...formData, exercises: newExercises });
-                }}
-                fullWidth
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'background.paper',
-                    borderRadius: 1.5,
-                  }
-                }}
-              />
-            </Box>
-            {formData.type === 'strength' ? (
-              <>
-                <Box flex={2}>
-                  <TextField
-                    label="Weight (kg)"
-                    type="tel"
-                    inputProps={{
-                      inputMode: "numeric",
-                      pattern: "[0-9]*"
-                    }}
-                    value={(exercise as FormStrengthExercise).weight || ''}
-                    placeholder="0"
-                    onChange={(e) => {
-                      const newExercises = [...formData.exercises!];
-                      newExercises[index] = { 
-                        ...exercise, 
-                        weight: e.target.value ? Number(e.target.value) : null 
-                      } as FormStrengthExercise;
-                      setFormData({ ...formData, exercises: newExercises });
-                    }}
-                    fullWidth
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1.5,
-                      },
-                      '& .MuiInputBase-input::placeholder': {
-                        color: 'text.disabled',
-                        opacity: 0.7
-                      }
-                    }}
-                  />
-                </Box>
-                <Box flex={2}>
-                  <TextField
-                    label="Sets"
-                    type="tel"
-                    inputProps={{
-                      inputMode: "numeric",
-                      pattern: "[0-9]*"
-                    }}
-                    value={(exercise as FormStrengthExercise).sets || ''}
-                    placeholder="0"
-                    onChange={(e) => {
-                      const newExercises = [...formData.exercises!];
-                      newExercises[index] = { 
-                        ...exercise, 
-                        sets: e.target.value ? Number(e.target.value) : null 
-                      } as FormStrengthExercise;
-                      setFormData({ ...formData, exercises: newExercises });
-                    }}
-                    fullWidth
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'background.paper',
-                        borderRadius: 1.5,
-                      },
-                      '& .MuiInputBase-input::placeholder': {
-                        color: 'text.disabled',
-                        opacity: 0.7
-                      }
-                    }}
-                  />
-                </Box>
-              </>
-            ) : null}
-            <Box flex={formData.type === 'strength' ? 2 : 5}>
-              <TextField
-                label="Reps"
-                type="tel"
-                inputProps={{
-                  inputMode: "numeric",
-                  pattern: "[0-9]*"
-                }}
-                value={exercise.reps || ''}
-                placeholder="0"
-                onChange={(e) => {
-                  const newExercises = [...formData.exercises!];
-                  newExercises[index] = { 
-                    ...exercise, 
-                    reps: e.target.value ? Number(e.target.value) : null 
-                  };
-                  setFormData({ ...formData, exercises: newExercises });
-                }}
-                fullWidth
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'background.paper',
-                    borderRadius: 1.5,
-                  },
-                  '& .MuiInputBase-input::placeholder': {
-                    color: 'text.disabled',
-                    opacity: 0.7
-                  }
-                }}
-              />
-            </Box>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <Box flex={formData.type === 'strength' ? 3 : 6}>
+                <TextField
+                  label="Exercise Name"
+                  value={exercise.name}
+                  onChange={(e) => {
+                    const newExercises = [...formData.exercises!];
+                    newExercises[index] = { ...exercise, name: e.target.value };
+                    setFormData({ ...formData, exercises: newExercises });
+                  }}
+                  fullWidth
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'background.paper',
+                      borderRadius: 1.5,
+                    }
+                  }}
+                />
+              </Box>
+              {formData.type === 'strength' ? (
+                <>
+                  <Box flex={2}>
+                    <TextField
+                      label="Weight (kg)"
+                      type="tel"
+                      inputProps={{
+                        inputMode: "numeric",
+                        pattern: "[0-9]*"
+                      }}
+                      value={(exercise as FormStrengthExercise).weight || ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const newExercises = [...formData.exercises!];
+                        newExercises[index] = { 
+                          ...exercise, 
+                          weight: e.target.value ? Number(e.target.value) : null 
+                        } as FormStrengthExercise;
+                        setFormData({ ...formData, exercises: newExercises });
+                      }}
+                      fullWidth
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'background.paper',
+                          borderRadius: 1.5,
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: 'text.disabled',
+                          opacity: 0.7
+                        }
+                      }}
+                    />
+                  </Box>
+                  <Box flex={2}>
+                    <TextField
+                      label="Sets"
+                      type="tel"
+                      inputProps={{
+                        inputMode: "numeric",
+                        pattern: "[0-9]*"
+                      }}
+                      value={(exercise as FormStrengthExercise).sets || ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const newExercises = [...formData.exercises!];
+                        newExercises[index] = { 
+                          ...exercise, 
+                          sets: e.target.value ? Number(e.target.value) : null 
+                        } as FormStrengthExercise;
+                        setFormData({ ...formData, exercises: newExercises });
+                      }}
+                      fullWidth
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'background.paper',
+                          borderRadius: 1.5,
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: 'text.disabled',
+                          opacity: 0.7
+                        }
+                      }}
+                    />
+                  </Box>
+                </>
+              ) : null}
+              <Box flex={formData.type === 'strength' ? 2 : 5}>
+                <TextField
+                  label="Reps"
+                  type="tel"
+                  inputProps={{
+                    inputMode: "numeric",
+                    pattern: "[0-9]*"
+                  }}
+                  value={exercise.reps || ''}
+                  placeholder="0"
+                  onChange={(e) => {
+                    const newExercises = [...formData.exercises!];
+                    newExercises[index] = { 
+                      ...exercise, 
+                      reps: e.target.value ? Number(e.target.value) : null 
+                    };
+                    setFormData({ ...formData, exercises: newExercises });
+                  }}
+                  fullWidth
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'background.paper',
+                      borderRadius: 1.5,
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: 'text.disabled',
+                      opacity: 0.7
+                    }
+                  }}
+                />
+              </Box>
+            </Stack>
             <Box 
-              flex={1} 
               display="flex" 
-              alignItems="center" 
               justifyContent="center"
-              sx={{
-                position: { xs: 'absolute', sm: 'static' },
-                right: { xs: 8, sm: 'auto' },
-                top: { xs: 8, sm: 'auto' },
-              }}
+              alignItems="center"
+              sx={{ mt: 1 }}
             >
               <IconButton
                 onClick={() => handleRemoveExercise(index)}
