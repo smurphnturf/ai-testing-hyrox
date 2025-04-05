@@ -139,6 +139,7 @@ const WeekDayHeader = styled(Box)(({ theme }) => ({
 export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Props) {
   const [selectedWorkouts, setSelectedWorkouts] = useState<{workouts: Workout[], date: Date} | null>(null);
   const [isAddingWorkout, setIsAddingWorkout] = useState(false);
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workoutsData, setWorkoutsData] = useState<Workout[]>([]);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
@@ -234,13 +235,28 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
     return uniqueWorkouts;
   };
 
+  const handleEditWorkout = (workout: Workout) => {
+    setEditingWorkout(workout);
+    setIsAddingWorkout(true);
+  };
+
   const handleAddWorkout = (workout: Workout) => {
     const updatedProgram = {
       ...program,
-      workouts: [...program.workouts, workout],
+      workouts: editingWorkout 
+        ? program.workouts.map(w => w.id === editingWorkout.id ? workout : w)
+        : [...program.workouts, workout],
     };
     onUpdateProgram(updatedProgram);
     setIsAddingWorkout(false);
+    setEditingWorkout(null);
+    // Refresh the selected workouts view using ID lookup for the newly added/edited workout
+    if (selectedWorkouts) {
+      setSelectedWorkouts({
+        ...selectedWorkouts,
+        workouts: [workout]
+      });
+    }
   };
 
   const handleDayClick = (date: Date) => {
@@ -332,17 +348,19 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
         })}
       </CalendarContainer>
 
-      <Dialog 
-        open={!!selectedWorkouts} 
-        onClose={() => setSelectedWorkouts(null)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden',
-          }
-        }}
+      <Dialog open={!!selectedWorkouts} onClose={() => {
+        setSelectedWorkouts(null);
+        setIsAddingWorkout(false);
+        setEditingWorkout(null);
+      }}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          overflow: 'hidden',
+        }
+      }}
       >
         {selectedWorkouts && (
           <>
@@ -362,7 +380,11 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                   })}
                 </Typography>
                 <IconButton 
-                  onClick={() => setSelectedWorkouts(null)}
+                  onClick={() => {
+                    setSelectedWorkouts(null);
+                    setIsAddingWorkout(false);
+                    setEditingWorkout(null);
+                  }}
                   sx={{
                     '&:hover': {
                       backgroundColor: 'rgba(0,0,0,0.04)',
@@ -452,7 +474,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                               {workout.name || `${workout.type} Workout`}
                             </Typography>
                             <IconButton 
-                              onClick={onEditProgram}
+                              onClick={() => handleEditWorkout(workout)}
                               size="small"
                               sx={{
                                 color: 'primary.main',
@@ -530,7 +552,11 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                 day={selectedWorkouts.date.getDate()}
                 date={selectedWorkouts.date}
                 onSave={handleAddWorkout}
-                onCancel={() => setIsAddingWorkout(false)}
+                onCancel={() => {
+                  setIsAddingWorkout(false);
+                  setEditingWorkout(null);
+                }}
+                initialWorkout={editingWorkout || undefined}
               />
             )}
           </>

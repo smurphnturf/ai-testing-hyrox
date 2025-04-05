@@ -32,9 +32,18 @@ export interface RunningWorkout extends BaseWorkout {
   effortLevel: number;
 }
 
-export interface CompromisedRunWorkout extends Omit<RunningWorkout, 'type'> {
+export interface RunningSegment {
+  distance: number;
+  pace: number;
+  time: number;
+  heartRate?: number;
+  effortLevel: number;
+}
+
+export interface CompromisedRunWorkout extends BaseWorkout {
   type: 'compromised-run';
-  exercises: Exercise[];
+  strengthExercises: StrengthExercise[];
+  runningSegments: RunningSegment[];
 }
 
 export interface AmrapWorkout extends BaseWorkout {
