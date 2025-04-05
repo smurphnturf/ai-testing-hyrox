@@ -31,33 +31,45 @@ const CalendarContainer = styled(Box, {
   overflowY: 'auto',
   maxHeight: 'calc(100vh - 200px)',
   marginTop: theme.spacing(2),
-  padding: theme.spacing(2),
+  padding: theme.spacing(1),
   borderRadius: theme.spacing(2),
   backgroundColor: 'rgba(0,0,0,0.02)',
+  [theme.breakpoints.up('sm')]: {
+    padding: theme.spacing(2),
+  }
 }));
 
 const CalendarGrid = styled(Box)(({ theme }) => ({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
-  gap: theme.spacing(1),
+  gap: theme.spacing(0.5),
   paddingBottom: theme.spacing(2),
+  [theme.breakpoints.up('sm')]: {
+    gap: theme.spacing(1),
+  }
 }));
 
 const DayCell = styled(Paper)(({ theme }) => ({
-  minHeight: '120px',
-  padding: theme.spacing(2),
+  minHeight: '100px',
+  padding: theme.spacing(1),
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(1),
+  gap: theme.spacing(0.5),
   cursor: 'pointer',
   position: 'relative',
-  borderRadius: theme.spacing(1.5),
+  borderRadius: theme.spacing(1),
   transition: 'all 0.3s ease',
   backgroundColor: theme.palette.background.paper,
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
   },
+  [theme.breakpoints.up('sm')]: {
+    minHeight: '120px',
+    padding: theme.spacing(2),
+    gap: theme.spacing(1),
+    borderRadius: theme.spacing(1.5),
+  }
 }));
 
 const DateHeader = styled(Box)(({ theme }) => ({
@@ -136,7 +148,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
   const currentYear = today.getFullYear();
 
   const getMonthHeight = () => {
-    return 48 + 40 + (6 * 120) + 32;
+    return 48 + 40 + (6 * 100) + 32;
   };
 
   useEffect(() => {
