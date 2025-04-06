@@ -532,6 +532,20 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                               </Box>
                             )}
 
+                            {workout.type === 'compromised-run' && (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {workout.segments.map((segment, i) => (
+                                  <Typography key={i} variant="body2" color="text.secondary">
+                                    {segment.type === 'strength' ? (
+                                      `${segment.name}: ${segment.sets} sets x ${segment.reps} reps @ ${segment.weight}kg`
+                                    ) : (
+                                      `Distance: ${segment.distance}km, Time: ${segment.time} minutes, Pace: ${segment.pace} min/km`
+                                    )}
+                                  </Typography>
+                                ))}
+                              </Box>
+                            )}
+
                             {workout.type === 'running' && (
                               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 {workout.runningSegments.map((segment, i) => (

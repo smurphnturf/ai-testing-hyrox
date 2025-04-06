@@ -97,6 +97,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
             if ('distance' in segment) {
               return {
                 ...segment,
+                type: 'running',
                 distance: segment.distance,
                 time: segment.time,
                 pace: segment.pace
@@ -104,6 +105,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
             } else {
               return {
                 ...segment,
+                type: 'strength',
                 weight: segment.weight,
                 reps: segment.reps,
                 sets: segment.sets,
@@ -206,12 +208,14 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
           segments: (formData.segments as (FormStrengthExercise | FormRunningSegment)[]).map(segment => {
             if ('distance' in segment) {
               return {
+                type: 'running',
                 distance: segment.distance || 0,
                 time: segment.time || 0,
                 pace: segment.pace || 0,
               };
             } else {
               return {
+                type: 'strength',
                 name: segment.name,
                 weight: segment.weight || 0,
                 reps: segment.reps || 0,
@@ -279,6 +283,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     } else if (formData.type === 'compromised-run') {
       const newSegments = [...(formData.segments || [])];
       newSegments.push({
+        type: 'running',
         distance: null,
         time: null,
         pace: null

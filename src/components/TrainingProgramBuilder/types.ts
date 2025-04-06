@@ -13,6 +13,7 @@ export interface Exercise {
 }
 
 export interface StrengthExercise extends Exercise {
+  type: 'strength';
   weight: number;
   sets: number;
   restTime: number;
@@ -42,6 +43,7 @@ export interface RunningWorkout extends BaseWorkout {
 }
 
 export interface RunningSegment {
+  type: 'running';
   distance: number;
   time: number;
   pace: number;
