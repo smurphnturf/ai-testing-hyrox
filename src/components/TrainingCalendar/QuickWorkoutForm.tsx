@@ -180,7 +180,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
   const handleSubmit = () => {
     try {
       const workoutData: Workout = {
-        id: crypto.randomUUID(),
+        id: initialWorkout?.id || crypto.randomUUID(),
         name: formData.name || `${formData.type} Workout`,
         type: formData.type,
         week,

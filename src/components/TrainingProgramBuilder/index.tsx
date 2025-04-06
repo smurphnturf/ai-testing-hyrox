@@ -48,7 +48,7 @@ export const TrainingProgramBuilder = ({ onProgramCreated, initialProgram }: Pro
     try {
       const updatedData = {
         ...data,
-        workouts: [] // Empty workouts array as we're not handling workouts here
+        workouts: initialProgram?.workouts || [] // Preserve existing workouts
       };
 
       if (initialProgram?.id) {
