@@ -43,6 +43,7 @@ interface WorkoutFormState {
   type: typeof workoutTypes[number];
   exercises?: (FormExercise | FormStrengthExercise)[];
   segments?: (FormStrengthExercise | FormRunningSegment)[];
+  runningSegments?: FormRunningSegment[];
   distance?: number | null;
   time?: number | null;
   pace?: number | null;
@@ -59,7 +60,7 @@ interface FormStrengthExercise extends Omit<StrengthExercise, 'weight' | 'reps' 
 }
 
 interface FormRunningSegment extends Omit<RunningSegment, 'distance' | 'time' | 'pace'> {
-  distance: number | null;
+  distance: string | number | null;
   time: number | null;
   pace: number | null;
 }
@@ -149,12 +150,12 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
         delete newFormData.segments;
         break;
       case 'running':
-        newFormData.segments = [{
+        newFormData.runningSegments = [{
           distance: null,
           time: null,
           pace: null
         }] as FormRunningSegment[];
-        delete newFormData.exercises;
+        delete newFormData.segments;
         break;
       case 'compromised-run':
         newFormData.segments = [];
@@ -177,66 +178,72 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
   };
 
   const handleSubmit = () => {
-    const workoutData: Workout = {
-      id: crypto.randomUUID(),
-      name: formData.name || `${formData.type} Workout`,
-      type: formData.type,
-      week,
-      day,
-      date: date.toISOString(),
-      ...(formData.type === 'strength' && {
-        exercises: (formData.exercises as FormStrengthExercise[]).map(e => ({
-          name: e.name,
-          weight: e.weight || 0,
-          reps: e.reps || 0,
-          sets: e.sets || 0,
-          restTime: e.restTime
-        })),
-      }),
-      ...(formData.type === 'running' && {
-        runningSegments: (formData.segments as FormRunningSegment[]).map(s => ({
-          distance: s.distance || 0,
-          time: s.time || 0,
-          pace: s.pace || 0,
-        })),
-      }),
-      ...(formData.type === 'compromised-run' && {
-        segments: (formData.segments as (FormStrengthExercise | FormRunningSegment)[]).map(segment => {
-          if ('distance' in segment) {
-            return {
-              distance: segment.distance || 0,
-              time: segment.time || 0,
-              pace: segment.pace || 0,
-            };
-          } else {
-            return {
-              name: segment.name,
-              weight: segment.weight || 0,
-              reps: segment.reps || 0,
-              sets: segment.sets || 0,
-              restTime: segment.restTime
-            };
-          }
+    try {
+      const workoutData: Workout = {
+        id: crypto.randomUUID(),
+        name: formData.name || `${formData.type} Workout`,
+        type: formData.type,
+        week,
+        day,
+        date: date.toISOString(),
+        ...(formData.type === 'strength' && {
+          exercises: (formData.exercises as FormStrengthExercise[]).map(e => ({
+            name: e.name,
+            weight: e.weight || 0,
+            reps: e.reps || 0,
+            sets: e.sets || 0,
+            restTime: e.restTime
+          })),
         }),
-      }),
-      ...(formData.type === 'amrap' && {
-        timeLimit: formData.timeLimit || 0,
-        exercises: (formData.exercises as FormExercise[]).map(e => ({
-          name: e.name,
-          reps: e.reps || 0
-        })),
-      }),
-      ...(formData.type === 'emom' && {
-        roundTime: formData.roundTime || 0,
-        totalTime: formData.totalTime || 0,
-        exercises: (formData.exercises as FormExercise[]).map(e => ({
-          name: e.name,
-          reps: e.reps || 0
-        })),
-      }),
-    } as Workout;
+        ...(formData.type === 'running' && {
+          runningSegments: (formData.runningSegments || []).map(s => ({
+            distance: s.distance || 0,
+            time: s.time || 0,
+            pace: s.pace || 0,
+          })),
+        }),
+        ...(formData.type === 'compromised-run' && {
+          segments: (formData.segments as (FormStrengthExercise | FormRunningSegment)[]).map(segment => {
+            if ('distance' in segment) {
+              return {
+                distance: segment.distance || 0,
+                time: segment.time || 0,
+                pace: segment.pace || 0,
+              };
+            } else {
+              return {
+                name: segment.name,
+                weight: segment.weight || 0,
+                reps: segment.reps || 0,
+                sets: segment.sets || 0,
+                restTime: segment.restTime
+              };
+            }
+          }),
+        }),
+        ...(formData.type === 'amrap' && {
+          timeLimit: formData.timeLimit || 0,
+          exercises: (formData.exercises as FormExercise[]).map(e => ({
+            name: e.name,
+            reps: e.reps || 0
+          })),
+        }),
+        ...(formData.type === 'emom' && {
+          roundTime: formData.roundTime || 0,
+          totalTime: formData.totalTime || 0,
+          exercises: (formData.exercises as FormExercise[]).map(e => ({
+            name: e.name,
+            reps: e.reps || 0
+          })),
+        }),
+      } as Workout;
 
-    onSave(workoutData);
+      console.log('Submitting workout:', workoutData);
+      onSave(workoutData);
+    } catch (err) {
+      console.error('Error creating workout:', err);
+      console.error('Form data state:', formData);
+    }
   };
 
   const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -261,28 +268,42 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
   };
 
   const handleAddRunningSegment = () => {
-    const newSegments = [...(formData.segments || [])];
-    newSegments.push({
-      distance: null,
-      time: null,
-      pace: null
-    } as FormRunningSegment);
-    setFormData({ ...formData, segments: newSegments });
-    handleAddClose();
+    if (formData.type === 'running') {
+      const newRunningSegments = [...(formData.runningSegments || [])];
+      newRunningSegments.push({
+        distance: null,
+        time: null,
+        pace: null
+      } as FormRunningSegment);
+      setFormData({ ...formData, runningSegments: newRunningSegments });
+    } else if (formData.type === 'compromised-run') {
+      const newSegments = [...(formData.segments || [])];
+      newSegments.push({
+        distance: null,
+        time: null,
+        pace: null
+      } as FormRunningSegment);
+      setFormData({ ...formData, segments: newSegments });
+    }
+    handleAddClose(); // Close the menu after adding
   };
 
-  const handleUpdateRunningSegment = (index: number, field: keyof FormRunningSegment, value: number | null) => {
-    const newSegments = [...formData.segments!];
+  const handleUpdateRunningSegment = (index: number, field: keyof FormRunningSegment, value: string | number | null) => {
+    const newSegments = [...formData.runningSegments!];
     const segment = newSegments[index] as FormRunningSegment;
     const updatedSegment = { ...segment };
+    if (typeof value === 'string') {
+      console.log('value is string run:', value);
+      value = parseFloat(value);
+    }
     updatedSegment[field] = value;
 
     // Auto-calculate logic same as renderRunningSegmentFields
     if (field !== 'distance' && updatedSegment.distance !== null) {
       if (field === 'time' && value !== null) {
-        updatedSegment.pace = value / updatedSegment.distance;
+        updatedSegment.pace = updatedSegment.distance ? value / Number(updatedSegment.distance) : null;
       } else if (field === 'pace' && value !== null) {
-        updatedSegment.time = updatedSegment.distance * value;
+        updatedSegment.time = Number(updatedSegment.distance) * value;
       }
     } else if (field !== 'time' && updatedSegment.time !== null) {
       if (field === 'distance' && value !== null) {
@@ -299,7 +320,58 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     }
 
     newSegments[index] = updatedSegment;
-    setFormData({ ...formData, segments: newSegments });
+    setFormData({ ...formData, runningSegments: newSegments });
+  };
+
+  const handleUpdateCompromisedRunningSegment = (index: number, field: keyof FormRunningSegment, value: string | number | null) => {
+    const newSegments = [...formData.segments!];
+    const segment = { ...newSegments[index] } as FormRunningSegment;
+
+    // Special handling for distance field when it contains a decimal point
+    if (field === 'distance' && typeof value === 'string') {
+      if (value === '' || value.endsWith('.') || /^\d*\.?\d*$/.test(value)) {
+        newSegments[index] = { ...segment, distance: value };
+        setFormData({ ...formData, segments: newSegments });
+        return;
+      }
+      value = parseFloat(value);
+    } else if (typeof value === 'string') {
+      value = parseFloat(value);
+    }
+
+    // Only proceed with calculations if we have a numeric value
+    if (typeof value === 'number' || value === null) {
+      (segment as any)[field] = value;
+
+      if (field !== 'distance' && segment.distance !== null) {
+        if (field === 'time' && value !== null) {
+          segment.pace = value / (typeof segment.distance === 'string' ? parseFloat(segment.distance) : segment.distance);
+        } else if (field === 'pace' && value !== null) {
+          segment.time = (typeof segment.distance === 'string' ? parseFloat(segment.distance) : segment.distance) * value;
+        }
+      } else if (field !== 'time' && segment.time !== null) {
+        if (field === 'distance' && value !== null) {
+          segment.pace = segment.time / value;
+        } else if (field === 'pace' && value !== null) {
+          segment.distance = segment.time / value;
+        }
+      } else if (field !== 'pace' && segment.pace !== null) {
+        if (field === 'distance' && value !== null) {
+          segment.time = value * segment.pace;
+        } else if (field === 'time' && value !== null) {
+          segment.distance = value / segment.pace;
+        }
+      }
+
+      newSegments[index] = segment;
+      setFormData({ ...formData, segments: newSegments });
+    }
+  };
+
+  const handleRemoveRunningSegment = (index: number) => {
+    const newSegments = [...formData.runningSegments!];
+    newSegments.splice(index, 1);
+    setFormData({ ...formData, runningSegments: newSegments });
   };
 
   const handleUpdateStrengthSegment = (
@@ -506,7 +578,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
   const renderRunningSegmentFields = (
     segment: FormRunningSegment,
     index: number,
-    onUpdate: (field: keyof FormRunningSegment, value: number | null) => void,
+    onUpdate: (field: keyof FormRunningSegment, value: string | number | null) => void,
     onDelete: () => void
   ) => {
     const timeToMinutesSeconds = (time: number | null) => {
@@ -540,22 +612,25 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
         </Typography>
         <TextField
           label="Distance (km)"
-          type="text"
-          inputProps={{
-            inputMode: "decimal"
-          }}
-          value={segment.distance || ''}
+          value={segment.distance}
           placeholder="0.0"
           onChange={(e) => {
+            console.log('Distance changed:', e.target.value);
             const value = e.target.value.replace(',', '.');
-            // Allow only numbers and one decimal point
+            // Only allow numbers and one decimal point
             if (/^\d*\.?\d*$/.test(value) || value === '') {
-              const numValue = value ? parseFloat(value) : null;
-              onUpdate('distance', numValue);
-              
-              // Auto-calculate pace if time is available
-              if (numValue !== null && segment.time !== null) {
-                onUpdate('pace', segment.time / numValue);
+              if (value.endsWith('.')) {
+                console.log('distance is value:', value);
+                onUpdate('distance', value);
+              } else {
+                const numValue = value ? parseFloat(value) : null;
+                console.log('distance is numvalue:', numValue);
+                onUpdate('distance', numValue);
+                // Auto-calculate pace if time is available
+                if (numValue !== null && segment.time !== null) {
+                  console.log('pace is numvalue:', segment.time / numValue);
+                  onUpdate('pace', segment.time / numValue);
+                }
               }
             }
           }}
@@ -588,7 +663,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               
               // Auto-calculate pace if distance is available
               if (segment.distance !== null) {
-                onUpdate('pace', newTime / segment.distance);
+                onUpdate('pace', newTime / Number(segment.distance));
               }
             }}
             fullWidth
@@ -617,7 +692,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
                 
                 // Auto-calculate pace if distance is available
                 if (segment.distance !== null) {
-                  onUpdate('pace', newTime / segment.distance);
+                  onUpdate('pace', newTime / Number(segment.distance));
                 }
               }
             }}
@@ -651,7 +726,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
               
               // Auto-calculate time if distance is available
               if (segment.distance !== null) {
-                onUpdate('time', segment.distance * newPace);
+                onUpdate('time', Number(segment.distance) * newPace);
               }
             }}
             fullWidth
@@ -680,7 +755,7 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
                 
                 // Auto-calculate time if distance is available
                 if (segment.distance !== null) {
-                  onUpdate('time', segment.distance * newPace);
+                  onUpdate('time', Number(segment.distance) * newPace);
                 }
               }
             }}
@@ -731,31 +806,19 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       >
         Running Segments
       </Typography>
-      {formData.segments?.map((segment, index) => (
+      {formData.runningSegments?.map((segment, index) => (
         <React.Fragment key={`segment-${index}`}>
-          {('distance' in segment) ? 
-            renderRunningSegmentFields(
-              segment as FormRunningSegment,
-              index,
-              (field, value) => handleUpdateRunningSegment(index, field, value),
-              () => handleRemoveSegment(index)
-            )
-            :
-            null
-          }
+          {renderRunningSegmentFields(
+            segment,
+            index,
+            (field, value) => handleUpdateRunningSegment(index, field, typeof value === 'number' ? value : null),
+            () => handleRemoveRunningSegment(index)
+          )}
         </React.Fragment>
       ))}
       <Button
         startIcon={<AddIcon />}
-        onClick={() => {
-          const newSegments = [...(formData.segments || [])];
-          newSegments.push({
-            distance: null,
-            time: null,
-            pace: null
-          } as FormRunningSegment);
-          setFormData({ ...formData, segments: newSegments });
-        }}
+        onClick={handleAddRunningSegment}
         variant="outlined"
         size="small"
         sx={{ 
@@ -897,8 +960,8 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
                 renderRunningSegmentFields(
                   segment as FormRunningSegment,
                   index,
-                  (field, value) => handleUpdateRunningSegment(index, field, value),
-                  () => handleRemoveSegment(index)
+                  (field, value) => handleUpdateCompromisedRunningSegment(index, field, value),
+                  () => handleRemoveRunningSegment(index)
                 )
               ) : (
                 <>

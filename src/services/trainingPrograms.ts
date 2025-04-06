@@ -14,13 +14,14 @@ const validateWorkout = (workout: Workout) => {
       })
       break
     case 'running':
+      console.log('Validating running workout:', workout);
       if (!workout.runningSegments?.length) {
         throw new Error(`Running workout "${workout.name}" must have at least one segment`)
       }
       workout.runningSegments.forEach(segment => {
-        if (segment.distance <= 0) throw new Error(`Invalid distance for running segment in workout "${workout.name}"`)
-        if (segment.time <= 0) throw new Error(`Invalid time for running segment in workout "${workout.name}"`)
-        if (segment.pace <= 0) throw new Error(`Invalid pace for running segment in workout "${workout.name}"`)
+        if (!segment || typeof segment.distance !== 'number') throw new Error(`Invalid distance for running segment in workout "${workout.name}"`)
+        if (!segment || typeof segment.time !== 'number') throw new Error(`Invalid time for running segment in workout "${workout.name}"`)
+        if (!segment || typeof segment.pace !== 'number') throw new Error(`Invalid pace for running segment in workout "${workout.name}"`)
       })
       break
     case 'amrap':
@@ -108,32 +109,47 @@ export const trainingProgramsService = {
   },
 
   async updateProgram(id: string, program: TrainingProgram) {
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      throw new Error('User must be authenticated to update programs')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('User must be authenticated to update programs')
+      }
+
+      // Log the program state before validation
+      console.log('Updating program:', program);
+
+      // Validate all workouts before saving
+      try {
+        program.workouts.forEach(validateWorkout)
+      } catch (validationError) {
+        console.error('Workout validation failed:', validationError);
+        console.error('Failed workout data:', program.workouts);
+        throw validationError;
+      }
+
+      const { data, error } = await supabase
+        .from('training_programs')
+        .update({
+          name: program.name,
+          duration: program.duration,
+          workouts: program.workouts
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Error in updateProgram:', err);
+      throw err;
     }
-
-    // Validate all workouts before saving
-    program.workouts.forEach(validateWorkout)
-
-    const { data, error } = await supabase
-      .from('training_programs')
-      .update({
-        name: program.name,
-        duration: program.duration,
-        workouts: program.workouts
-      })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single()
-
-    if (error) {
-      throw error
-    }
-
-    return data
   },
 
   async deleteProgram(id: string) {

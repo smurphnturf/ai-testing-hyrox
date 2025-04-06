@@ -135,10 +135,6 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
                 <TextField
                   {...field}
                   label="Distance (km)"
-                  type="text"
-                  inputProps={{
-                    inputMode: "decimal"
-                  }}
                   value={field.value || ''}
                   onChange={(e) => {
                     const value = e.target.value.replace(',', '.');

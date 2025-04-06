@@ -241,21 +241,28 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
   };
 
   const handleAddWorkout = (workout: Workout) => {
-    const updatedProgram = {
-      ...program,
-      workouts: editingWorkout 
-        ? program.workouts.map(w => w.id === editingWorkout.id ? workout : w)
-        : [...program.workouts, workout],
-    };
-    onUpdateProgram(updatedProgram);
-    setIsAddingWorkout(false);
-    setEditingWorkout(null);
-    // Refresh the selected workouts view using ID lookup for the newly added/edited workout
-    if (selectedWorkouts) {
-      setSelectedWorkouts({
-        ...selectedWorkouts,
-        workouts: [workout]
-      });
+    try {
+      console.log('Adding workout to program:', workout);
+      const updatedProgram = {
+        ...program,
+        workouts: editingWorkout 
+          ? program.workouts.map(w => w.id === editingWorkout.id ? workout : w)
+          : [...program.workouts, workout],
+      };
+      console.log('Updated program:', updatedProgram);
+      onUpdateProgram(updatedProgram);
+      setIsAddingWorkout(false);
+      setEditingWorkout(null);
+      if (selectedWorkouts) {
+        setSelectedWorkouts({
+          ...selectedWorkouts,
+          workouts: [workout]
+        });
+      }
+    } catch (err) {
+      console.error('Error adding workout:', err);
+      console.error('Program state:', program);
+      console.error('Workout being added:', workout);
     }
   };
 
