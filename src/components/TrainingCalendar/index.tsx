@@ -10,11 +10,18 @@ import {
   Button,
   Snackbar,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import TimerIcon from '@mui/icons-material/Timer';
+import SpeedIcon from '@mui/icons-material/Speed';
+import RestoreIcon from '@mui/icons-material/Restore';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import type { TrainingProgram, Workout } from '../TrainingProgramBuilder/types';
 import { styled } from '@mui/material/styles';
 import QuickWorkoutForm from './QuickWorkoutForm';
@@ -87,12 +94,15 @@ const DateNumber = styled(Typography)(() => ({
   fontWeight: 600,
 }));
 
-const WorkoutDot = styled('div')(({ theme }) => ({
-  width: '6px',
-  height: '6px',
-  borderRadius: '50%',
-  backgroundColor: theme.palette.primary.main,
+const WorkoutDot = styled('div')<{ hasIcon?: boolean }>(({ theme, hasIcon }) => ({
+  width: hasIcon ? 'auto' : '6px',
+  height: hasIcon ? 'auto' : '6px',
+  borderRadius: hasIcon ? '0' : '50%',
+  backgroundColor: hasIcon ? 'transparent' : theme.palette.primary.main,
   margin: '2px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   transition: 'transform 0.2s ease',
   '&:hover': {
     transform: 'scale(1.2)',
@@ -136,6 +146,25 @@ const WeekDayHeader = styled(Box)(({ theme }) => ({
     fontSize: '0.875rem',
   },
 }));
+
+const getWorkoutIcon = (type: string) => {
+  switch (type) {
+    case 'strength':
+      return <FitnessCenterIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    case 'running':
+      return <DirectionsRunIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    case 'compromised-run':
+      return <SwapHorizIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    case 'amrap':
+      return <SpeedIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    case 'emom':
+      return <TimerIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    case 'recovery':
+      return <RestoreIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />;
+    default:
+      return null;
+  }
+};
 
 export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Props) {
   const [selectedWorkouts, setSelectedWorkouts] = useState<{workouts: Workout[], date: Date} | null>(null);
@@ -364,8 +393,17 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                       </DateHeader>
                       {workouts.length > 0 && (
                         <WorkoutDotsContainer>
-                          {workouts.map((_, i) => (
-                            <WorkoutDot key={i} />
+                          {workouts.map((workout, i) => (
+                            <Tooltip
+                              key={i}
+                              title={workout.type.replace('-', ' ')}
+                              arrow
+                              placement="top"
+                            >
+                              <WorkoutDot hasIcon={!!getWorkoutIcon(workout.type)}>
+                                {getWorkoutIcon(workout.type)}
+                              </WorkoutDot>
+                            </Tooltip>
                           ))}
                         </WorkoutDotsContainer>
                       )}
@@ -503,7 +541,13 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                             alignItems: 'center', 
                             mb: 2
                           }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            <Typography variant="subtitle1" sx={{ 
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
+                            }}>
+                              {getWorkoutIcon(workout.type)}
                               {workout.name || `${workout.type} Workout`}
                             </Typography>
                             <IconButton 
