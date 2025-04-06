@@ -16,11 +16,11 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.4",
+    "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.11",
     "@mui/material": "^5.15.11",
-    "@mui/x-date-pickers": "^6.19.6",
+    "@mui/x-date-pickers": "^7.28.3",
     "@supabase/supabase-js": "^2.49.4",
     "date-fns": "^2.30.0",
     "react": "^19.0.0",
