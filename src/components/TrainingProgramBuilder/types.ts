@@ -91,7 +91,6 @@ export interface TrainingProgram {
   id?: string;
   name: string;
   type?: string;
-  duration: number;
   description?: string;
   eventDate?: string;
   workouts: Workout[];

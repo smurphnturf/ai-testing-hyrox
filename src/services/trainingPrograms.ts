@@ -54,10 +54,18 @@ const validateWorkout = (workout: Workout) => {
   }
 }
 
-const mapDatabaseToProgram = (data: any): TrainingProgram => ({
+interface DatabaseProgram {
+  id: string;
+  name: string;
+  workouts: Workout[];
+  event_date?: string;
+  description?: string;
+  type?: string;
+}
+
+const mapDatabaseToProgram = (data: DatabaseProgram): TrainingProgram => ({
   id: data.id,
   name: data.name,
-  duration: data.duration,
   workouts: data.workouts,
   eventDate: data.event_date,
   description: data.description,
@@ -81,7 +89,6 @@ export const trainingProgramsService = {
         {
           user_id: user.id,
           name: program.name,
-          duration: program.duration,
           workouts: program.workouts,
           event_date: program.eventDate
         }
@@ -143,7 +150,6 @@ export const trainingProgramsService = {
         .from('training_programs')
         .update({
           name: program.name,
-          duration: program.duration,
           workouts: program.workouts,
           event_date: program.eventDate
         })

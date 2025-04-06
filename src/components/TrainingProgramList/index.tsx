@@ -191,20 +191,6 @@ export function TrainingProgramList() {
               >
                 Type: {program.type}
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  backgroundColor: 'rgba(62,207,142,0.1)',
-                  color: 'primary.main',
-                  py: 0.5,
-                  px: 1,
-                  borderRadius: 1,
-                  display: 'inline-block',
-                  fontWeight: 500
-                }}
-              >
-                {program.duration} weeks
-              </Typography>
               {program.description && (
                 <Typography 
                   variant="body2" 
@@ -327,18 +313,6 @@ export function TrainingProgramList() {
                   }}
                 >
                   Type: {selectedProgram.type}
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  paragraph
-                  sx={{
-                    color: 'text.secondary',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5
-                  }}
-                >
-                  Duration: {selectedProgram.duration} weeks
                 </Typography>
                 {selectedProgram.description && (
                   <Typography 

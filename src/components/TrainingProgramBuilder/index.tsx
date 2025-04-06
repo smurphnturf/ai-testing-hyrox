@@ -32,7 +32,6 @@ export const TrainingProgramBuilder = ({ onProgramCreated, initialProgram }: Pro
   const { control, handleSubmit } = useForm<TrainingProgram>({
     defaultValues: initialProgram || {
       name: '',
-      duration: 1,
       workouts: [],
       eventDate: new Date().toISOString(),
     },
@@ -141,20 +140,6 @@ export const TrainingProgramBuilder = ({ onProgramCreated, initialProgram }: Pro
                         }
                       }
                     }}
-                  />
-                )}
-              />
-
-              <Controller
-                name="duration"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    type="number"
-                    label="Duration (weeks)"
-                    fullWidth
-                    InputProps={{ inputProps: { min: 1, max: 52 } }}
                   />
                 )}
               />
