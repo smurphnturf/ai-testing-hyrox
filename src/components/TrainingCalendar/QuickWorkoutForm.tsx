@@ -16,8 +16,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { 
   Workout, 
   Exercise, 
-  StrengthExercise, 
-  RunningSegment
+  StrengthExercise
 } from '../TrainingProgramBuilder/types';
 
 const workoutTypes = [
@@ -53,16 +52,21 @@ interface WorkoutFormState {
   totalTime?: number | null;
 }
 
-interface FormStrengthExercise extends Omit<StrengthExercise, 'weight' | 'reps' | 'sets'> {
+interface FormStrengthExercise {
+  name: string;
+  type?: 'strength';
   weight: number | null;
   reps: number | null;
   sets: number | null;
+  restTime: number;
 }
 
-interface FormRunningSegment extends Omit<RunningSegment, 'distance' | 'time' | 'pace'> {
+interface FormRunningSegment {
+  type?: 'running';
   distance: string | number | null;
   time: number | null;
   pace: number | null;
+  [key: string]: string | number | null | undefined;  // Index signature for dynamic access
 }
 
 interface FormExercise extends Omit<Exercise, 'reps'> {
@@ -332,21 +336,19 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
     const newSegments = [...formData.segments!];
     const segment = { ...newSegments[index] } as FormRunningSegment;
 
-    // Special handling for distance field when it contains a decimal point
     if (field === 'distance' && typeof value === 'string') {
       if (value === '' || value.endsWith('.') || /^\d*\.?\d*$/.test(value)) {
-        newSegments[index] = { ...segment, distance: value };
+        segment[field] = value;
+        newSegments[index] = segment;
         setFormData({ ...formData, segments: newSegments });
         return;
       }
-      value = parseFloat(value);
-    } else if (typeof value === 'string') {
       value = parseFloat(value);
     }
 
     // Only proceed with calculations if we have a numeric value
     if (typeof value === 'number' || value === null) {
-      (segment as any)[field] = value;
+      segment[field] = value;
 
       if (field !== 'distance' && segment.distance !== null) {
         if (field === 'time' && value !== null) {
