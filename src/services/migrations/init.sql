@@ -4,5 +4,6 @@ create table training_programs (
   name text not null,
   duration integer not null,
   workouts jsonb not null,
+  event_date timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );

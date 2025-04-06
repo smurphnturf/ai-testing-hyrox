@@ -54,6 +54,16 @@ const validateWorkout = (workout: Workout) => {
   }
 }
 
+const mapDatabaseToProgram = (data: any): TrainingProgram => ({
+  id: data.id,
+  name: data.name,
+  duration: data.duration,
+  workouts: data.workouts,
+  eventDate: data.event_date,
+  description: data.description,
+  type: data.type
+});
+
 export const trainingProgramsService = {
   async saveProgram(program: TrainingProgram) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -72,7 +82,8 @@ export const trainingProgramsService = {
           user_id: user.id,
           name: program.name,
           duration: program.duration,
-          workouts: program.workouts
+          workouts: program.workouts,
+          event_date: program.eventDate
         }
       ])
       .select()
@@ -85,7 +96,7 @@ export const trainingProgramsService = {
       throw error
     }
 
-    return data
+    return mapDatabaseToProgram(data)
   },
 
   async getPrograms() {
@@ -105,7 +116,7 @@ export const trainingProgramsService = {
       throw error
     }
 
-    return data
+    return data?.map(mapDatabaseToProgram) || []
   },
 
   async updateProgram(id: string, program: TrainingProgram) {
@@ -133,7 +144,8 @@ export const trainingProgramsService = {
         .update({
           name: program.name,
           duration: program.duration,
-          workouts: program.workouts
+          workouts: program.workouts,
+          event_date: program.eventDate
         })
         .eq('id', id)
         .eq('user_id', user.id)
@@ -145,7 +157,7 @@ export const trainingProgramsService = {
         throw error;
       }
 
-      return data;
+      return mapDatabaseToProgram(data);
     } catch (err) {
       console.error('Error in updateProgram:', err);
       throw err;
@@ -189,6 +201,6 @@ export const trainingProgramsService = {
       throw error
     }
 
-    return data || null
+    return data ? mapDatabaseToProgram(data) : null
   },
 }

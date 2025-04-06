@@ -212,9 +212,9 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
         const workoutDate = new Date(w.date);
         return workoutDate.toDateString() === date.toDateString();
       }
-      if (!program.startDate) return false;
-      const programStart = new Date(program.startDate);
-      const diffTime = Math.abs(date.getTime() - programStart.getTime());
+      if (!program.eventDate) return false;
+      const programEvent = new Date(program.eventDate);
+      const diffTime = Math.abs(date.getTime() - programEvent.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const week = Math.floor(diffDays / 7) + 1;
       const day = date.getDay() || 7;
@@ -233,6 +233,13 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
     const uniqueWorkouts = Array.from(new Map(allWorkouts.map(w => [w.id, w])).values());
     
     return uniqueWorkouts;
+  };
+
+  const isEventDateInMonth = (program: TrainingProgram) => {
+    if (!program.eventDate) return false;
+    const programEvent = new Date(program.eventDate);
+    return programEvent.getMonth() === today.getMonth() &&
+           programEvent.getFullYear() === today.getFullYear();
   };
 
   const handleEditWorkout = (workout: Workout) => {
