@@ -14,6 +14,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import StarIcon from '@mui/icons-material/Star';
 import type { TrainingProgram, Workout } from '../TrainingProgramBuilder/types';
 import { styled } from '@mui/material/styles';
 import QuickWorkoutForm from './QuickWorkoutForm';
@@ -235,11 +236,10 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
     return uniqueWorkouts;
   };
 
-  const isEventDateInMonth = (program: TrainingProgram) => {
+  const isEventDate = (date: Date) => {
     if (!program.eventDate) return false;
-    const programEvent = new Date(program.eventDate);
-    return programEvent.getMonth() === today.getMonth() &&
-           programEvent.getFullYear() === today.getFullYear();
+    const eventDate = new Date(program.eventDate);
+    return date.toDateString() === eventDate.toDateString();
   };
 
   const handleEditWorkout = (workout: Workout) => {
@@ -328,6 +328,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                   const workouts = getWorkoutsForDate(date);
                   const isCurrentMonth = date.getMonth() === monthIndex;
                   const isToday = date.toDateString() === today.toDateString();
+                  const isEvent = isEventDate(date);
                   
                   return (
                     <DayCell 
@@ -336,15 +337,30 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                       onClick={() => handleDayClick(date)}
                       sx={{
                         opacity: isCurrentMonth ? 1 : 0.3,
-                        border: isToday ? '2px solid' : 'none',
-                        borderColor: 'primary.main',
+                        border: isToday ? '2px solid' : isEvent ? '2px solid black' : 'none',
+                        borderColor: isToday ? 'primary.main' : isEvent ? 'black' : 'transparent',
                         backgroundColor: isToday ? 'rgba(62,207,142,0.05)' : 'background.paper',
+                        position: 'relative'
                       }}
                     >
                       <DateHeader>
                         <DateNumber>
                           {date.getDate()}
                         </DateNumber>
+                        {isEvent && (
+                          <StarIcon 
+                            sx={{ 
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, 60%)',
+                              color: 'primary.main',
+                              opacity: 1.0,
+                              fontSize: '1.2rem',
+                              pointerEvents: 'none'
+                            }} 
+                          />
+                        )}
                       </DateHeader>
                       {workouts.length > 0 && (
                         <WorkoutDotsContainer>
