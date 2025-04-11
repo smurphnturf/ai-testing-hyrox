@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -10,6 +10,12 @@ import {
   Typography,
   Stack,
   Menu,
+  Dialog,
+  DialogTitle,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -18,6 +24,7 @@ import {
   Exercise, 
   StrengthExercise
 } from '../TrainingProgramBuilder/types';
+import { trainingProgramsService } from '../../services/trainingPrograms';
 
 const workoutTypes = [
   'strength',
@@ -142,6 +149,45 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
       exercises: [{ name: '', weight: null, reps: null, sets: null, restTime: 60 }] as FormStrengthExercise[],
     };
   });
+
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loadingWorkouts, setLoadingWorkouts] = useState(false);
+
+  const fetchWorkouts = async () => {
+    setLoadingWorkouts(true);
+    try {
+      const programs = await trainingProgramsService.getPrograms();
+      const allWorkouts = programs.flatMap(program => program.workouts);
+      setWorkouts(allWorkouts);
+    } catch (error) {
+      console.error('Error fetching workouts:', error);
+    } finally {
+      setLoadingWorkouts(false);
+    }
+  };
+
+  const handleCopyWorkout = (workout: Workout) => {
+    setFormData({
+      ...formData,
+      name: workout.name,
+      type: workout.type,
+      exercises: workout.exercises || [],
+      runningSegments: workout.runningSegments || [],
+      segments: workout.segments || [],
+      timeLimit: workout.timeLimit || null,
+      roundTime: workout.roundTime || null,
+      totalTime: workout.totalTime || null,
+    });
+    setCopyDialogOpen(false);
+  };
+
+  useEffect(() => {
+    if (copyDialogOpen) {
+      fetchWorkouts();
+    }
+  }, [copyDialogOpen]);
 
   const handleTypeChange = (type: typeof workoutTypes[number]) => {
     const newFormData: WorkoutFormState = {
@@ -1086,6 +1132,49 @@ export function QuickWorkoutForm({ week, day, date, onSave, onCancel, initialWor
 
   return (
     <>
+      <Button
+        variant="outlined"
+        onClick={() => setCopyDialogOpen(true)}
+        sx={{ mb: 2 }}
+      >
+        Copy From Another Day
+      </Button>
+
+      <Dialog open={copyDialogOpen} onClose={() => setCopyDialogOpen(false)}>
+        <DialogTitle>Copy Workout</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Search Workouts"
+            fullWidth
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          {loadingWorkouts ? (
+            <CircularProgress />
+          ) : (
+            <List>
+              {workouts
+                .filter(workout =>
+                  workout.name.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map(workout => (
+                  <ListItem
+                    button
+                    key={workout.id}
+                    onClick={() => handleCopyWorkout(workout)}
+                  >
+                    <ListItemText primary={workout.name} secondary={`Type: ${workout.type}`} />
+                  </ListItem>
+                ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCopyDialogOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
       <DialogContent sx={{ p: 3 }}>
         <Stack spacing={2.5}>
           <TextField
