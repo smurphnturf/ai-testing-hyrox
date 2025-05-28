@@ -1,3 +1,7 @@
+# Pure Vibe Code Testing
+Hello This project was to compare and constrast pure vibe code copilot agent mode with various models versus loveable and cursor. A poorly made example comparing gpt4 and sonnet3.5 https://youtu.be/J3HZFs43dKA
+
+# Below & Entire Repo is Agent Generated
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
