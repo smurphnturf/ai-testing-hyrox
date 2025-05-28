@@ -17,14 +17,15 @@ interface Props {
   workout: Workout;
   onRemoveExercise?: (exerciseIndex: number) => void;
   onAddExercise?: () => void;
+  result?: import('./types').WorkoutResult;
 }
 
-export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, onAddExercise }: Props) => {
+export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, onAddExercise, result }: Props) => {
   const renderStrengthForm = () => (
     <Box>
       <Typography variant="subtitle2" gutterBottom>Exercises</Typography>
       {workout.type === 'strength' && (workout as StrengthWorkout).exercises?.map((_, exerciseIndex: number) => (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={exerciseIndex}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }} key={exerciseIndex}>
           <Box sx={{ width: { xs: '100%', sm: '25%' } }}>
             <Controller
               name={`workouts.${index}.exercises.${exerciseIndex}.name`}
@@ -108,6 +109,14 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
               <DeleteIcon />
             </IconButton>
           </Box>
+          {/* Show result values if present */}
+          {result?.segments?.[exerciseIndex] && (
+            <Box sx={{ ml: 2 }}>
+              <Typography variant="caption" color="success.main">
+                Result: {result.segments[exerciseIndex].sets} sets, {result.segments[exerciseIndex].reps} reps, {result.segments[exerciseIndex].weight}kg
+              </Typography>
+            </Box>
+          )}
         </Box>
       ))}
       <Button
@@ -126,7 +135,7 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
     <Box>
       <Typography variant="subtitle2" gutterBottom>Running Segments</Typography>
       {workout.type === 'running' && workout.runningSegments?.map((_, segmentIndex: number) => (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }} key={segmentIndex}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }} key={segmentIndex}>
           <Box sx={{ width: { xs: '100%', sm: '25%' } }}>
             <Controller
               name={`workouts.${index}.runningSegments.${segmentIndex}.distance`}
@@ -187,6 +196,13 @@ export const WorkoutDetailsForm = ({ control, index, workout, onRemoveExercise, 
               <DeleteIcon />
             </IconButton>
           </Box>
+          {result?.segments?.[segmentIndex] && (
+            <Box sx={{ ml: 2 }}>
+              <Typography variant="caption" color="success.main">
+                Result: {result.segments[segmentIndex].distance}km, {result.segments[segmentIndex].time}min, {result.segments[segmentIndex].pace}min/km
+              </Typography>
+            </Box>
+          )}
         </Box>
       ))}
       <Button

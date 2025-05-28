@@ -209,4 +209,42 @@ export const trainingProgramsService = {
 
     return data ? mapDatabaseToProgram(data) : null
   },
+
+  async saveWorkoutResult(programId: string, result: {
+    workoutId: string;
+    date: string;
+    status: 'complete' | 'missed';
+    segments?: unknown;
+  }) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User must be authenticated to log results');
+    const { data, error } = await supabase
+      .from('workout_results')
+      .upsert([
+        {
+          user_id: user.id,
+          program_id: programId,
+          workout_id: result.workoutId,
+          date: result.date,
+          status: result.status,
+          segments: result.segments || null,
+        }
+      ], { onConflict: 'user_id,program_id,workout_id,date' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getWorkoutResults(programId: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User must be authenticated to fetch results');
+    const { data, error } = await supabase
+      .from('workout_results')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('program_id', programId);
+    if (error) throw error;
+    return data || [];
+  },
 }

@@ -89,6 +89,23 @@ export type Workout =
   | EmomWorkout
   | RecoveryWorkout;
 
+export interface Segment {
+  name: string;
+  reps?: number;
+  restTime?: number;
+  weight?: number;
+  sets?: number;
+  type: 'strength' | 'running';
+  distance?: number;
+  time?: number; 
+}
+export interface WorkoutResult {
+  workout_id: string;
+  date: string; // ISO string
+  status: 'complete' | 'missed';
+  segments?: Segment[]; // segment results, type depends on workout type
+}
+
 export interface TrainingProgram {
   id?: string;
   name: string;
@@ -96,4 +113,5 @@ export interface TrainingProgram {
   description?: string;
   eventDate?: string;
   workouts: Workout[];
+  workoutResults?: WorkoutResult[];
 }

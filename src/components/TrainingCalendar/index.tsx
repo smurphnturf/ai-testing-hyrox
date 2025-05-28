@@ -22,7 +22,7 @@ import TimerIcon from '@mui/icons-material/Timer';
 import SpeedIcon from '@mui/icons-material/Speed';
 import RestoreIcon from '@mui/icons-material/Restore';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import type { TrainingProgram, Workout } from '../TrainingProgramBuilder/types';
+import type { TrainingProgram, Workout, WorkoutResult, StrengthExercise, RunningSegment } from '../TrainingProgramBuilder/types';
 import { styled } from '@mui/material/styles';
 import QuickWorkoutForm from './QuickWorkoutForm';
 import { trainingProgramsService } from '../../services/trainingPrograms';
@@ -172,6 +172,11 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workoutsData, setWorkoutsData] = useState<Workout[]>([]);
+  const [workoutResults, setWorkoutResults] = useState<WorkoutResult[]>([]);
+  // Update logResultWorkout state to include result
+  const [logResultWorkout, setLogResultWorkout] = useState<{workout: Workout, date: Date, result?: WorkoutResult} | null>(null);
+  const [logResultStatus, setLogResultStatus] = useState<'complete' | 'missed'>('complete');
+  const [logResultSegments, setLogResultSegments] = useState<StrengthExercise[] | RunningSegment[] | null>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
   
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -199,6 +204,19 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
 
     loadWorkouts();
   }, [program]);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!program.id) return;
+      try {
+        const results = await trainingProgramsService.getWorkoutResults(program.id);
+        setWorkoutResults(results);
+      } catch (err) {
+        setError('Failed to load workout results');
+      }
+    };
+    fetchResults();
+  }, [program.id]);
 
   useEffect(() => {
     if (calendarContainerRef.current) {
@@ -307,6 +325,24 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
     setSelectedWorkouts({ workouts, date });
   };
 
+  const getDayResult = (date: Date) => {
+    const iso = date.toISOString().slice(0, 10);
+    const results = workoutResults.filter(r => r.date === iso);
+    if (results.some(r => r.status === 'complete')) return 'complete';
+    if (results.some(r => r.status === 'missed')) return 'missed';
+    return null;
+  };
+
+  // Add this effect to initialize segment state when opening the log dialog
+  useEffect(() => {
+    if (logResultWorkout) {
+      const w = logResultWorkout.workout;
+      if (w.type === 'strength') setLogResultSegments([...w.exercises]);
+      else if (w.type === 'running') setLogResultSegments([...w.runningSegments]);
+      else setLogResultSegments(null);
+    }
+  }, [logResultWorkout]);
+
   return (
     <Box sx={{ width: '100%', margin: 0, padding: 0 }}>
       <Box sx={{ 
@@ -358,7 +394,10 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                   const isCurrentMonth = date.getMonth() === monthIndex;
                   const isToday = date.toDateString() === today.toDateString();
                   const isEvent = isEventDate(date);
-                  
+                  const dayResult = getDayResult(date);
+                  let bgColor = isToday ? 'rgba(62,207,142,0.05)' : 'background.paper';
+                  if (dayResult === 'complete') bgColor = '#e6f9ed';
+                  else if (dayResult === 'missed') bgColor = '#ffeaea';
                   return (
                     <DayCell 
                       key={i} 
@@ -368,7 +407,7 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                         opacity: isCurrentMonth ? 1 : 0.3,
                         border: isToday ? '2px solid' : isEvent ? '2px solid black' : 'none',
                         borderColor: isToday ? 'primary.main' : isEvent ? 'black' : 'transparent',
-                        backgroundColor: isToday ? 'rgba(62,207,142,0.05)' : 'background.paper',
+                        backgroundColor: bgColor,
                         position: 'relative'
                       }}
                     >
@@ -516,120 +555,171 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                       </Button>
                     </Box>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {selectedWorkouts.workouts.map((workout) => (
-                        <Paper
-                          key={workout.id}
-                          sx={{ 
-                            p: 3,
-                            borderRadius: 2,
-                            position: 'relative',
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: '4px',
-                              backgroundColor: 'primary.main',
-                              borderRadius: '4px 0 0 4px',
-                            }
-                          }}
-                        >
-                          <Box sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center', 
-                            mb: 2
-                          }}>
-                            <Typography variant="subtitle1" sx={{ 
-                              fontWeight: 600,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1
+                      {selectedWorkouts.workouts.map((workout) => {
+                        // Robustly find result for this workout and date
+                        const workoutResult = workoutResults.find(r => (
+                          r.workout_id === workout.id
+                        ));
+                        console.log('Training Calendar selectedworkouts:', selectedWorkouts);
+                        console.log('Training Calendar workoutResults:', workoutResults);
+                        console.log('Training Calendar workoutResult:', workoutResult);
+                        return (
+                          <Paper
+                            key={workout.id}
+                            sx={{ 
+                              p: 3,
+                              borderRadius: 2,
+                              position: 'relative',
+                              '&::before': {
+                                content: '""',
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                width: '4px',
+                                backgroundColor: 'primary.main',
+                                borderRadius: '4px 0 0 4px',
+                              }
+                            }}
+                          >
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              mb: 2
                             }}>
-                              {getWorkoutIcon(workout.type)}
-                              {workout.name || `${workout.type} Workout`}
-                            </Typography>
-                            <IconButton 
-                              onClick={() => handleEditWorkout(workout)}
-                              size="small"
-                              sx={{
-                                color: 'primary.main',
-                                padding: 1,
-                                '&:hover': {
-                                  backgroundColor: 'rgba(62,207,142,0.1)',
-                                }
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
+                              <Typography variant="subtitle1" sx={{ 
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}>
+                                {getWorkoutIcon(workout.type)}
+                                {workout.name || `${workout.type} Workout`}
+                              </Typography>
+                              <IconButton 
+                                onClick={() => handleEditWorkout(workout)}
+                                size="small"
+                                sx={{
+                                  color: 'primary.main',
+                                  padding: 1,
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(62,207,142,0.1)',
+                                  }
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
 
-                          <Box sx={{ pl: 2, borderLeft: '1px solid', borderColor: 'divider' }}>
-                            {workout.type === 'strength' && (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                {workout.exercises.map((exercise, i) => (
-                                  <Typography key={i} variant="body2" color="text.secondary">
-                                    {exercise.name}: {exercise.sets} sets × {exercise.reps} reps @ {exercise.weight}kg
-                                  </Typography>
-                                ))}
-                              </Box>
-                            )}
+                            <Box sx={{ pl: 2, borderLeft: '1px solid', borderColor: 'divider' }}>
+                              {workout.type === 'strength' && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {workout.exercises.map((exercise, i) => (
+                                    <Typography key={i} variant="body2" color="text.secondary">
+                                      {exercise.name}: {exercise.sets} sets × {exercise.reps} reps @ {exercise.weight}kg
+                                      {workoutResult?.segments?.[i] &&
+                                        'sets' in workoutResult.segments[i] &&
+                                        'reps' in workoutResult.segments[i] &&
+                                        'weight' in workoutResult.segments[i] && (
+                                          <span style={{ color: '#43a047', marginLeft: 8 }}>
+                                            (Result: {String(workoutResult.segments[i].sets)} sets × {String(workoutResult.segments[i].reps)} reps @ {String(workoutResult.segments[i].weight)}kg)
+                                          </span>
+                                      )}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              )}
 
-                            {workout.type === 'compromised-run' && (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                {workout.segments.map((segment, i) => (
-                                  <Typography key={i} variant="body2" color="text.secondary">
-                                    {segment.type === 'strength' ? (
-                                      `${segment.name}: ${segment.sets} sets x ${segment.reps} reps @ ${segment.weight}kg`
+                              {workout.type === 'compromised-run' && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {workout.segments.map((segment, i) => (
+                                    <Typography key={i} variant="body2" color="text.secondary">
+                                      {segment.type === 'strength'
+                                        ? `${segment.name}: ${segment.sets} sets x ${segment.reps} reps @ ${segment.weight}kg`
+                                        : `Distance: ${segment.distance}km, Time: ${segment.time} minutes, Pace: ${segment.pace} min/km`}
+                                      {workoutResult?.segments?.[i] && (
+                                        <span style={{ color: '#43a047', marginLeft: 8 }}>
+                                          (Result: {segment.type === 'strength'
+                                            ? ('sets' in workoutResult.segments[i] && 'reps' in workoutResult.segments[i] && 'weight' in workoutResult.segments[i]
+                                                ? `${String((workoutResult.segments[i] as any).sets)} sets x ${String((workoutResult.segments[i] as any).reps)} reps @ ${String((workoutResult.segments[i] as any).weight)}kg`
+                                                : '')
+                                            : ('distance' in workoutResult.segments[i] && 'time' in workoutResult.segments[i] && 'pace' in workoutResult.segments[i]
+                                                ? `${String((workoutResult.segments[i] as any).distance)}km, ${String((workoutResult.segments[i] as any).time)}min, ${String((workoutResult.segments[i] as any).pace)}min/km`
+                                                : '')
+                                          )}
+                                        </span>
+                                      )}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              )}
+
+                              {workout.type === 'running' && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {workout.runningSegments.map((segment, i) => (
+                                    <Typography key={i} variant="body2" color="text.secondary">
+                                      Distance: {segment.distance}km, Time: {segment.time} minutes, Pace: {segment.pace} min/km
+                                      {workoutResult?.segments?.[i] &&
+                                        'distance' in workoutResult.segments[i] &&
+                                        'time' in workoutResult.segments[i] &&
+                                        'pace' in workoutResult.segments[i] && (
+                                          <span style={{ color: '#43a047', marginLeft: 8 }}>
+                                            (Result: {String((workoutResult.segments[i] as any).distance)}km, {String((workoutResult.segments[i] as any).time)}min, {String((workoutResult.segments[i] as any).pace)}min/km)
+                                          </span>
+                                      )}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              )}
+
+                              {(workout.type === 'amrap' || workout.type === 'emom') && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <Typography 
+                                    variant="body2"
+                                    sx={{
+                                      color: 'primary.main',
+                                      backgroundColor: 'rgba(62,207,142,0.1)',
+                                      py: 0.5,
+                                      px: 1,
+                                      borderRadius: 1,
+                                      display: 'inline-block',
+                                      mb: 1,
+                                    }}
+                                  >
+                                    {workout.type === 'amrap' ? (
+                                      `Time Limit: ${workout.timeLimit} minutes`
                                     ) : (
-                                      `Distance: ${segment.distance}km, Time: ${segment.time} minutes, Pace: ${segment.pace} min/km`
+                                      `Round Time: ${workout.roundTime}s / Total: ${workout.totalTime} minutes`
                                     )}
                                   </Typography>
-                                ))}
-                              </Box>
-                            )}
-
-                            {workout.type === 'running' && (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                {workout.runningSegments.map((segment, i) => (
-                                  <Typography key={i} variant="body2" color="text.secondary">
-                                    Distance: {segment.distance}km, Time: {segment.time} minutes, Pace: {segment.pace} min/km
-                                  </Typography>
-                                ))}
-                              </Box>
-                            )}
-
-                            {(workout.type === 'amrap' || workout.type === 'emom') && (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <Typography 
-                                  variant="body2"
-                                  sx={{
-                                    color: 'primary.main',
-                                    backgroundColor: 'rgba(62,207,142,0.1)',
-                                    py: 0.5,
-                                    px: 1,
-                                    borderRadius: 1,
-                                    display: 'inline-block',
-                                    mb: 1,
-                                  }}
-                                >
-                                  {workout.type === 'amrap' ? (
-                                    `Time Limit: ${workout.timeLimit} minutes`
-                                  ) : (
-                                    `Round Time: ${workout.roundTime}s / Total: ${workout.totalTime} minutes`
-                                  )}
-                                </Typography>
-                                {workout.exercises.map((exercise, i) => (
-                                  <Typography key={i} variant="body2" color="text.secondary">
-                                    {exercise.name}: {exercise.reps} reps
-                                  </Typography>
-                                ))}
-                              </Box>
-                            )}
-                          </Box>
-                        </Paper>
-                      ))}
+                                  {workout.exercises.map((exercise, i) => (
+                                    <Typography key={i} variant="body2" color="text.secondary">
+                                      {exercise.name}: {exercise.reps} reps
+                                      {workoutResult?.segments?.[i] &&
+                                        'reps' in workoutResult.segments[i] && (
+                                          <span style={{ color: '#43a047', marginLeft: 8 }}>
+                                            (Result: {String(workoutResult.segments[i].reps)} reps)
+                                          </span>
+                                      )}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              )}
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => setLogResultWorkout({ workout, date: selectedWorkouts.date, result: workoutResult })}
+                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                              >
+                                {workoutResult ? 'Edit Result' : 'Log Result'}
+                              </Button>
+                            </Box>
+                          </Paper>
+                        );
+                      })}
                     </Box>
                   </Box>
                 )}
@@ -647,6 +737,169 @@ export function TrainingCalendar({ program, onEditProgram, onUpdateProgram }: Pr
                 initialWorkout={editingWorkout || undefined}
               />
             )}
+          </>
+        )}
+      </Dialog>
+
+      {/* Log Result Dialog */}
+      <Dialog open={!!logResultWorkout} onClose={() => setLogResultWorkout(null)} maxWidth="sm" fullWidth>
+        {logResultWorkout && (
+          <>
+            <DialogTitle>{logResultWorkout.result ? 'Edit Workout Result' : 'Log Workout Result'}</DialogTitle>
+            <DialogContent>
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  variant={logResultStatus === 'complete' ? 'contained' : 'outlined'}
+                  onClick={() => setLogResultStatus('complete')}
+                  sx={{ mr: 2 }}
+                >
+                  Complete
+                </Button>
+                <Button
+                  variant={logResultStatus === 'missed' ? 'contained' : 'outlined'}
+                  onClick={() => setLogResultStatus('missed')}
+                >
+                  Missed
+                </Button>
+              </Box>
+              {/* Segment editing UI with result comparison */}
+              {logResultWorkout.workout.type === 'strength' && Array.isArray(logResultSegments) && (
+                <Box>
+                  {(logResultSegments as StrengthExercise[]).map((ex, i) => (
+                    <Box key={i} sx={{ mb: 2 }}>
+                      <Typography variant="body2">{ex.name}</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          placeholder="Sets"
+                          value={ex.sets}
+                          onChange={e => {
+                            const segs = (logResultSegments as StrengthExercise[]).map((seg, idx) => idx === i ? { ...seg, sets: Number(e.target.value) } : seg);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 60 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'strength' ? logResultWorkout.workout.exercises[i]?.sets : ''}
+                        </Typography>
+                        <input
+                          type="number"
+                          placeholder="Reps"
+                          value={ex.reps}
+                          onChange={e => {
+                            const segs = (logResultSegments as StrengthExercise[]).map((seg, idx) => idx === i ? { ...seg, reps: Number(e.target.value) } : seg);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 60 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'strength' ? logResultWorkout.workout.exercises[i]?.reps : ''}
+                        </Typography>
+                        <input
+                          type="number"
+                          placeholder="Weight"
+                          value={ex.weight}
+                          onChange={e => {
+                            const segs = (logResultSegments as StrengthExercise[]).map((seg, idx) => idx === i ? { ...seg, weight: Number(e.target.value) } : seg);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 60 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'strength' ? logResultWorkout.workout.exercises[i]?.weight : ''}
+                        </Typography>
+                      </Box>
+                      {logResultWorkout.result?.segments?.[i] && (
+                        <Box sx={{ mt: 0.5 }}>
+                          <Typography variant="caption" color="success.main">
+                            Last Result: {logResultWorkout.result.segments[i].sets} sets, {logResultWorkout.result.segments[i].reps} reps, {logResultWorkout.result.segments[i].weight}kg
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
+              {logResultWorkout.workout.type === 'running' && Array.isArray(logResultSegments) && (
+                <Box>
+                  {(logResultSegments as RunningSegment[]).map((seg, i) => (
+                    <Box key={i} sx={{ mb: 2 }}>
+                      <Typography variant="body2">Segment {i + 1}</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          placeholder="Distance (km)"
+                          value={seg.distance}
+                          onChange={e => {
+                            const segs = (logResultSegments as RunningSegment[]).map((s, idx) => idx === i ? { ...s, distance: Number(e.target.value) } : s);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 80 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'running' ? logResultWorkout.workout.runningSegments[i]?.distance : ''}
+                        </Typography>
+                        <input
+                          type="number"
+                          placeholder="Time (min)"
+                          value={seg.time}
+                          onChange={e => {
+                            const segs = (logResultSegments as RunningSegment[]).map((s, idx) => idx === i ? { ...s, time: Number(e.target.value) } : s);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 80 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'running' ? logResultWorkout.workout.runningSegments[i]?.time : ''}
+                        </Typography>
+                        <input
+                          type="number"
+                          placeholder="Pace (min/km)"
+                          value={seg.pace}
+                          onChange={e => {
+                            const segs = (logResultSegments as RunningSegment[]).map((s, idx) => idx === i ? { ...s, pace: Number(e.target.value) } : s);
+                            setLogResultSegments(segs);
+                          }}
+                          style={{ width: 80 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          Planned: {logResultWorkout.workout.type === 'running' ? logResultWorkout.workout.runningSegments[i]?.pace : ''}
+                        </Typography>
+                      </Box>
+                      {logResultWorkout.result?.segments?.[i] && (
+                        <Box sx={{ mt: 0.5 }}>
+                          <Typography variant="caption" color="success.main">
+                            Last Result: {logResultWorkout.result.segments[i].distance}km, {logResultWorkout.result.segments[i].time}min, {logResultWorkout.result.segments[i].pace}min/km
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
+              {/* Add similar UI for other types as needed */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={async () => {
+                    if (!program.id) return;
+                    await trainingProgramsService.saveWorkoutResult(program.id, {
+                      workoutId: logResultWorkout.workout.id,
+                      date: logResultWorkout.date.toISOString().slice(0, 10),
+                      status: logResultStatus,
+                      segments: logResultSegments,
+                    });
+                    setLogResultWorkout(null);
+                    // Refresh results
+                    const results = await trainingProgramsService.getWorkoutResults(program.id);
+                    setWorkoutResults(results);
+                  }}
+                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                >
+                  Save Result
+                </Button>
+              </Box>
+            </DialogContent>
           </>
         )}
       </Dialog>

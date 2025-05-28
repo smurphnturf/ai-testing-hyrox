@@ -35,6 +35,7 @@ const workoutTypes = [
   'recovery',
 ] as const;
 
+// Add prop for result
 interface Props {
   week: number;
   day: number;
@@ -42,6 +43,7 @@ interface Props {
   onSave: (workout: Workout) => void;
   onCancel: () => void;
   initialWorkout?: Workout;
+  result?: import('../TrainingProgramBuilder/types').WorkoutResult;
 }
 
 interface WorkoutFormState {
